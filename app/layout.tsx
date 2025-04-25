@@ -17,7 +17,15 @@ export const metadata: Metadata = {
   title: "Axiom",
   description: "Una pagina para estudiantes",
 };
-
+const componentStyle = {
+  backgroundImage: "url('/background.svg')",
+  // Add other background properties as needed
+  backgroundSize: "cover", // Example: Cover the entire element
+  backgroundPosition: "center", // Example: Center the image
+  backgroundRepeat: "no-repeat", // Example: Don't repeat the image
+  minHeight: "100vh", // Example: Ensure the div takes at least the full viewport height
+  color: "white", // Example: Set text color for visibility
+};
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -26,7 +34,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased ${componentStyle}`}
       >
         {children}
       </body>
