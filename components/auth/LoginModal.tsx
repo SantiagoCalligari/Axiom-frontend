@@ -1,4 +1,5 @@
-"use client"; // Required for useState, useEffect, event handlers
+// components/auth/LoginModal.tsx
+"use client";
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -13,43 +14,43 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/app/context/AuthContext"; // Import useAuth
+import { toast } from "sonner"; // Import toast
 
-// Define the expected shape of a successful login response
+// Interfaces (keep as before)
 interface LoginResponse {
   access_token: string;
   token_type: string;
-  expires_at: string; // Or Date if you parse it
+  expires_at: string;
 }
-
-// Define the expected shape of an error response (adjust as needed)
 interface ErrorResponse {
   message: string;
-  errors?: Record<string, string[]>; // Optional: For validation errors
+  errors?: Record<string, string[]>;
 }
 
 export function LoginModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  // Remove local error state, use toast instead
+  // const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth(); // Get login function from context
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
-    setError(null);
+    // setError(null); // No longer needed
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!apiUrl) {
-      setError("API URL is not configured.");
+      // Use toast for errors
+      toast.error("API URL is not configured.");
       setIsLoading(false);
       return;
     }
 
-    // Endpoint from your Postman screenshot
     const loginEndpoint = `${apiUrl}/api/auth/token`;
-
-    // Prepare form data as x-www-form-urlencoded
     const formData = new URLSearchParams();
     formData.append("email", email);
     formData.append("password", password);
@@ -58,50 +59,58 @@ export function LoginModal() {
       const response = await fetch(loginEndpoint, {
         method: "POST",
         headers: {
-          // Crucial: Match the 'x-www-form-urlencoded' from Postman
           "Content-Type": "application/x-www-form-urlencoded",
-          Accept: "application/json", // Expect JSON response
+          Accept: "application/json",
         },
-        body: formData.toString(), // Convert URLSearchParams to string
+        body: formData.toString(),
       });
 
       const result: LoginResponse | ErrorResponse = await response.json();
 
       if (!response.ok) {
-        // Handle potential error structures from Laravel
         let errorMessage = "Login failed. Please check your credentials.";
         if ("message" in result && result.message) {
           errorMessage = result.message;
+          // Optionally display validation errors if present
+          if (result.errors) {
+            const firstError = Object.values(result.errors)[0]?.[0];
+            if (firstError) errorMessage += `: ${firstError}`;
+          }
         }
-        // You could add more specific error handling here if needed
-        // e.g., checking for result.errors for validation messages
         throw new Error(errorMessage);
       }
 
       // --- Success ---
       const loginData = result as LoginResponse;
-      console.log("Login successful:", loginData);
-      // TODO: Store the token securely (e.g., state management, context, httpOnly cookie via backend)
-      // Example: localStorage.setItem('authToken', loginData.access_token); (Not recommended for production)
-      setIsOpen(false); // Close modal on success
-      setEmail(""); // Clear fields
+      login(loginData.access_token); // Use context login function
+      toast.success("Logged in successfully!"); // Show success toast
+      setIsOpen(false);
+      setEmail("");
       setPassword("");
-      // TODO: Potentially redirect the user or update UI state
-      // Example: router.push('/dashboard'); (if using Next.js router)
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An unexpected error occurred.",
-      );
+      const message =
+        err instanceof Error ? err.message : "An unexpected error occurred.";
+      toast.error(message); // Show error toast
       console.error("Login error:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Reset fields when modal is closed
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      setEmail("");
+      setPassword("");
+      // setError(null); // No longer needed
+    }
+    setIsOpen(open);
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    // Pass handleOpenChange to Dialog
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        {/* This button will trigger the modal */}
         <Button variant="outline">Entrar</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
@@ -113,6 +122,7 @@ export function LoginModal() {
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
+            {/* Input fields remain the same */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="email" className="text-right">
                 Email
@@ -142,9 +152,8 @@ export function LoginModal() {
               />
             </div>
           </div>
-          {error && (
-            <p className="mb-4 text-center text-sm text-red-600">{error}</p>
-          )}
+          {/* Remove local error display */}
+          {/* {error && <p className="mb-4 text-center text-sm text-red-600">{error}</p>} */}
           <DialogFooter>
             <Button type="submit" disabled={isLoading}>
               {isLoading ? "Logging in..." : "Login"}
@@ -155,4 +164,3 @@ export function LoginModal() {
     </Dialog>
   );
 }
-
