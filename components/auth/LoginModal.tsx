@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/app/context/AuthContext"; // Import useAuth
-import { toast } from "sonner"; // Import toast
+import { useAuth } from "@/app/context/AuthContext";
+import { toast } from "sonner";
 
 // Interfaces (keep as before)
 interface LoginResponse {
@@ -32,19 +32,17 @@ export function LoginModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // Remove local error state, use toast instead
-  // const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth(); // Get login function from context
+  const { login } = useAuth();
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleCredentialsSubmit = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
     setIsLoading(true);
-    // setError(null); // No longer needed
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!apiUrl) {
-      // Use toast for errors
       toast.error("API URL is not configured.");
       setIsLoading(false);
       return;
@@ -71,7 +69,6 @@ export function LoginModal() {
         let errorMessage = "Login failed. Please check your credentials.";
         if ("message" in result && result.message) {
           errorMessage = result.message;
-          // Optionally display validation errors if present
           if (result.errors) {
             const firstError = Object.values(result.errors)[0]?.[0];
             if (firstError) errorMessage += `: ${firstError}`;
@@ -80,86 +77,120 @@ export function LoginModal() {
         throw new Error(errorMessage);
       }
 
-      // --- Success ---
       const loginData = result as LoginResponse;
-      login(loginData.access_token); // Use context login function
-      toast.success("Logged in successfully!"); // Show success toast
+      login(loginData.access_token);
+      toast.success("Logged in successfully!");
       setIsOpen(false);
       setEmail("");
       setPassword("");
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "An unexpected error occurred.";
-      toast.error(message); // Show error toast
+      toast.error(message);
       console.error("Login error:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Reset fields when modal is closed
+  const handleGoogleLoginClick = () => {
+    // --- Option 1: Direct Redirect (Simpler) ---
+    // Redirect the user directly to the Laravel backend route that starts the Google OAuth flow.
+    // The backend will handle the redirect to Google and the callback.
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (apiUrl) {
+      // Make sure this route exists in your Laravel routes/web.php or routes/api.php
+      window.location.href = `${apiUrl}/login/google/redirect`;
+    } else {
+      toast.error("API URL not configured for Google Login.");
+    }
+
+    // --- Option 2: Open Popup (More complex, better UX potentially) ---
+    // This would involve opening a popup window for the Google flow and listening
+    // for messages or URL changes to get the token back. More complex to implement reliably.
+
+    // --- Placeholder ---
+    // toast.info("Google Login not implemented yet.");
+  };
+
+
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       setEmail("");
       setPassword("");
-      // setError(null); // No longer needed
     }
     setIsOpen(open);
   };
 
   return (
-    // Pass handleOpenChange to Dialog
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline">Entrar</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Login</DialogTitle>
+          <DialogTitle>Ingresar</DialogTitle>
           <DialogDescription>
-            Enter your credentials to access your account.
+            Accedé con tu cuenta de Axiom o ingresa con Google.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            {/* Input fields remain the same */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="col-span-3"
-                disabled={isLoading}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="password" className="text-right">
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="col-span-3"
-                disabled={isLoading}
-              />
-            </div>
+
+        {/* Email/Password Form */}
+        <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+          {/* Changed layout: Removed grid-cols-4, using space-y-1 inside divs */}
+          <div className="space-y-1">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="you@example.com" // Added placeholder
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={isLoading}
+            />
           </div>
-          {/* Remove local error display */}
-          {/* {error && <p className="mb-4 text-center text-sm text-red-600">{error}</p>} */}
+          <div className="space-y-1">
+            <Label htmlFor="password">Contraseña</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={isLoading}
+            />
+            {/* Optional: Add Forgot Password link here */}
+          </div>
           <DialogFooter>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Logging in..." : "Login"}
+            <Button type="submit" disabled={isLoading} className="w-full">
+              {isLoading ? "Ingresando..." : "Ingresa con tu mail"}
             </Button>
           </DialogFooter>
         </form>
+
+        {/* Divider */}
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              O continuar con
+            </span>
+          </div>
+        </div>
+
+        {/* Google Login Button */}
+        <Button
+          variant="outline"
+          className="w-full flex items-center justify-center gap-x-2"
+          onClick={handleGoogleLoginClick}
+          disabled={isLoading} // Disable while email login is processing
+        >
+          Ingresar con Google
+        </Button>
+
       </DialogContent>
     </Dialog>
   );
