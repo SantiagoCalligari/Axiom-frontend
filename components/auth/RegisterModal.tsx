@@ -57,7 +57,7 @@ export function RegisterModal() {
     }
 
     // Endpoint común para registro en Laravel API
-    const registerEndpoint = `${apiUrl}/api/register`; // Ajusta si es diferente
+    const registerEndpoint = `${apiUrl}/api/auth/register`; // Ajusta si es diferente
 
     try {
       const response = await fetch(registerEndpoint, {
