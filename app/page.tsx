@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { LoginModal } from "@/components/auth/LoginModal";
 import { useAuth } from "@/app/context/AuthContext";
 import { toast } from "sonner";
+import { RegisterModal } from "@/components/auth/RegisterModal";
 
 // University Interface (keep as before)
 interface University {
@@ -219,7 +220,7 @@ export default function Home() {
         ) : (
           <>
             <LoginModal />
-            <Button>Registrate</Button>
+            <RegisterModal />
           </>
         )}
       </div>
