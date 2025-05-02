@@ -6,9 +6,12 @@ import { Fleur_De_Leah } from "next/font/google";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoginModal } from "@/components/auth/LoginModal";
+// Corrected import path for AuthContext based on previous examples
 import { useAuth } from "@/app/context/AuthContext";
 import { toast } from "sonner";
 import { RegisterModal } from "@/components/auth/RegisterModal";
+import Link from "next/link"; // <-- Import Link
+import { Skeleton } from "@/components/ui/skeleton"; // <-- Import Skeleton
 
 // University Interface (keep as before)
 interface University {
@@ -41,8 +44,6 @@ function SearchIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-// REMOVED debounce function
-
 export default function Home() {
   const { token, logout, isLoading: isAuthLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,23 +54,19 @@ export default function Home() {
 
   const handleLogout = () => {
     logout();
-    toast.info("Logged out.");
+    toast.info("Sesión cerrada."); // Spanish
   };
 
-  // --- Search Logic ---
-
-  // Function to fetch universities (now accepts AbortSignal)
-  const fetchUniversities = async (
+  // --- Search Logic (remains the same) ---
+  const fetchUniversities = useCallback(async ( // Added useCallback and dependency array
     query: string,
-    signal: AbortSignal, // Added signal parameter
+    signal: AbortSignal,
   ): Promise<University[]> => {
-    // No length check here, fetch even for 1 character if desired
-    // Or keep a minimum length check: if (query.trim().length < 1) return [];
+    // ... (fetchUniversities implementation remains the same)
     setIsSearchLoading(true);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!apiUrl) {
-      // Avoid toast spamming, maybe log error or show once
-      console.error("API URL is not configured.");
+      console.error("URL de la API no configurada.");
       setIsSearchLoading(false);
       return [];
     }
@@ -80,90 +77,71 @@ export default function Home() {
         `${apiUrl}/api/universities?${params.toString()}`,
         {
           headers: { Accept: "application/json" },
-          signal, // Pass the signal to fetch
+          signal,
         },
       );
 
-      // Don't throw error if aborted, just return empty
       if (signal.aborted) {
-        console.log("Fetch aborted for:", query);
+        console.log("Fetch abortado para:", query);
         return [];
       }
 
       if (!response.ok) {
-        // Handle non-abort errors
-        throw new Error(`Failed to fetch universities (status: ${response.status})`);
+        throw new Error(`Error al buscar universidades (status: ${response.status})`);
       }
 
       const data = await response.json();
       return data.data || [];
     } catch (error) {
-      // Ignore abort errors, log others
       if ((error as Error).name === 'AbortError') {
-        console.log('Fetch aborted successfully');
+        console.log('Fetch abortado exitosamente');
         return [];
       }
-      console.error("Search error:", error);
+      console.error("Error de búsqueda:", error);
       toast.error(
-        error instanceof Error ? error.message : "Search failed.",
+        error instanceof Error ? error.message : "Falló la búsqueda.", // Spanish
       );
       return [];
     } finally {
-      // Only set loading false if the signal wasn't aborted
-      // This prevents flicker if a new request starts immediately
       if (!signal.aborted) {
         setIsSearchLoading(false);
       }
     }
-  };
+  }, []); // Empty dependency array for useCallback
 
-  // Effect to trigger search on every searchTerm change
   useEffect(() => {
-    // Create an AbortController for this specific effect run
     const controller = new AbortController();
     const signal = controller.signal;
 
-    if (searchTerm.trim()) { // Check if searchTerm is not just whitespace
+    if (searchTerm.trim()) {
       setIsDropdownVisible(true);
-      setIsSearchLoading(true); // Set loading immediately
+      setIsSearchLoading(true);
 
       fetchUniversities(searchTerm, signal)
         .then((fetchedResults) => {
-          // Only update results if the request wasn't aborted
           if (!signal.aborted) {
             setResults(fetchedResults);
           }
         })
         .catch((error) => {
-          // Error handling is now mostly inside fetchUniversities
-          // We only need to catch potential unhandled promise rejections if any
           if ((error as Error).name !== 'AbortError') {
-            console.error("Unhandled fetch error in effect:", error);
+            console.error("Error de fetch no manejado en effect:", error);
           }
-        })
-        .finally(() => {
-          // Loading state is handled within fetchUniversities based on abort status
-          // We could potentially set loading false here ONLY if signal wasn't aborted,
-          // but doing it in fetchUniversities is cleaner.
         });
 
     } else {
-      setResults([]); // Clear results if search term is empty/whitespace
+      setResults([]);
       setIsDropdownVisible(false);
-      setIsSearchLoading(false); // Ensure loading is false if term is cleared
+      setIsSearchLoading(false);
     }
 
-    // Cleanup function: Abort the fetch request when the component unmounts
-    // or when the searchTerm changes again (triggering the effect to re-run)
     return () => {
-      console.log("Aborting fetch for:", searchTerm); // Log abortion
+      console.log("Abortando fetch para:", searchTerm);
       controller.abort();
-      // Maybe set loading false here on abort? Consider UX.
-      // setIsSearchLoading(false);
     };
-  }, [searchTerm]); // Dependency: only searchTerm
+    // Include fetchUniversities in dependency array as it's defined with useCallback
+  }, [searchTerm, fetchUniversities]);
 
-  // Effect for click outside (keep as before)
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -177,23 +155,21 @@ export default function Home() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []); // Empty dependency array is correct here
-
+  }, []);
   // --- End Search Logic ---
 
-  // Auth Loading State (keep as before)
+
+  // Auth Loading State - Added Skeletons for header
   if (isAuthLoading) {
-    // ... (Auth loading skeleton remains the same)
     return (
       <div className="relative flex min-h-screen flex-col bg-gray-200">
-        {/* Optional: Add skeleton loaders for header and content */}
-        <div className="absolute top-4 right-4 flex h-10 gap-x-3 p-4 sm:top-6 sm:right-6">
-          {/* Skeleton buttons */}
-          <div className="h-10 w-20 animate-pulse rounded-md bg-gray-300"></div>
-          <div className="h-10 w-24 animate-pulse rounded-md bg-gray-300"></div>
+        {/* Skeleton Header */}
+        <div className="absolute top-4 right-4 flex h-10 items-center gap-x-3 p-4 sm:top-6 sm:right-6">
+          <Skeleton className="h-10 w-20 rounded-md" />
+          <Skeleton className="h-10 w-24 rounded-md" />
         </div>
+        {/* Skeleton Body */}
         <div className="flex flex-1 items-center justify-center p-4">
-          {/* Skeleton content */}
           <div className="flex w-full animate-pulse flex-col items-center text-center mb-16 sm:mb-20">
             <div className="mb-1 h-20 w-3/5 rounded bg-gray-300 sm:h-24"></div>
             <div className="mb-6 h-6 w-2/5 rounded bg-gray-300"></div>
@@ -208,16 +184,21 @@ export default function Home() {
 
   return (
     <div className="relative flex min-h-screen flex-col bg-gray-200">
-      {/* Conditional Header Buttons (keep as before) */}
+      {/* Conditional Header Buttons */}
       <div className="absolute top-4 right-4 flex items-center gap-x-3 p-4 sm:top-6 sm:right-6">
         {token ? (
+          // --- User is logged in ---
           <>
-            <Button variant="outline">Profile</Button>
+            {/* Link to Profile Page */}
+            <Link href="/perfil" passHref>
+              <Button variant="outline">Perfil</Button> {/* Spanish */}
+            </Link>
             <Button variant="ghost" onClick={handleLogout}>
-              Logout
+              Salir {/* Spanish */}
             </Button>
           </>
         ) : (
+          // --- User is logged out ---
           <>
             <LoginModal />
             <RegisterModal />
@@ -225,24 +206,24 @@ export default function Home() {
         )}
       </div>
 
-      {/* Centering Container (keep as before) */}
+      {/* Centering Container (remains the same) */}
       <div className="flex flex-1 items-center justify-center p-4">
-        {/* Content Block (keep as before) */}
+        {/* Content Block (remains the same) */}
         <div className="flex w-full flex-col items-center text-center mb-16 sm:mb-20">
-          {/* Heading (keep as before) */}
+          {/* Heading (remains the same) */}
           <h1
             className={`mb-1 text-8xl font-medium text-blue-700 sm:text-9xl ${fleur.className}`}
           >
             Axiom
           </h1>
-          {/* Subtitle (keep as before) */}
+          {/* Subtitle (remains the same) */}
           <p
             className={`mb-6 text-lg text-gray-600 sm:text-xl ${fleur.className}`}
           >
             Por estudiantes, Para estudiantes
           </p>
 
-          {/* --- Search Bar Section with Dropdown --- */}
+          {/* --- Search Bar Section with Dropdown (remains the same) --- */}
           <div
             ref={searchContainerRef}
             className="relative w-full max-w-2xl px-4 md:px-0"
@@ -250,29 +231,28 @@ export default function Home() {
             <div className="relative flex items-center">
               <Input
                 type="search"
-                placeholder="Buscá tu Universidad"
+                placeholder="Buscá tu Universidad" // Spanish
                 className="w-full h-14 rounded-full px-6 py-3 pr-12 text-lg font-medium shadow-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-400"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onFocus={() => searchTerm.trim() && setIsDropdownVisible(true)} // Show dropdown on focus if term exists
+                onFocus={() => searchTerm.trim() && setIsDropdownVisible(true)}
               />
-              {/* Search Icon Button (keep as before) */}
               <Button
                 variant="ghost"
                 size="icon"
                 className="absolute right-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                aria-label="Search"
+                aria-label="Buscar" // Spanish
               >
                 <SearchIcon className="h-6 w-6" />
               </Button>
             </div>
 
-            {/* --- Dropdown Menu (logic slightly adjusted for empty term) --- */}
-            {isDropdownVisible && searchTerm.trim() && ( // Only show if visible AND term exists
+            {/* --- Dropdown Menu (remains the same) --- */}
+            {isDropdownVisible && searchTerm.trim() && (
               <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-300 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800">
                 {isSearchLoading ? (
                   <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                    Loading...
+                    Cargando... {/* Spanish */}
                   </div>
                 ) : results.length > 0 ? (
                   <ul className="max-h-60 overflow-y-auto py-1">
@@ -284,16 +264,16 @@ export default function Home() {
                           setSearchTerm(uni.name);
                           setIsDropdownVisible(false);
                           setResults([]);
-                          console.log("Selected University:", uni);
+                          console.log("Universidad seleccionada:", uni); // Spanish
                         }}
                       >
                         {uni.name}
                       </li>
                     ))}
                   </ul>
-                ) : ( // Show "No results" only if not loading and results are empty
+                ) : (
                   <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                    No results found.
+                    No se encontraron resultados. {/* Spanish */}
                   </div>
                 )}
               </div>
