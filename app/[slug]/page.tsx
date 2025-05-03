@@ -37,33 +37,28 @@ interface ApiResponse {
   data: UniversityDetail;
 }
 
-// --- Función para obtener los datos de la universidad ---
 async function getUniversityData(slug: string): Promise<UniversityDetail | null> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL; // O usa una variable de entorno específica del servidor si prefieres
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) {
     console.error("URL de la API no configurada.");
-    // Podrías lanzar un error aquí para que Next.js muestre una página de error
-    // throw new Error("Configuración de API incompleta");
     return null;
   }
 
-  const universityEndpoint = `${apiUrl}/api/universities/${slug}`; // Asumiendo prefijo /universities/
+  const universityEndpoint = `${apiUrl}/api/${slug}`;
 
   try {
-    // Fetch con cache revalidada cada cierto tiempo (ej: 1 hora) o bajo demanda
     const response = await fetch(universityEndpoint, {
       headers: {
         Accept: "application/json",
       },
-      next: { revalidate: 3600 } // Revalidar cada hora
+      next: { revalidate: 3600 }
     });
 
     if (response.status === 404) {
-      return null; // Indicador de no encontrado
+      return null;
     }
 
     if (!response.ok) {
-      // Lanza error para otros fallos de API
       throw new Error(`Error ${response.status}: No se pudo obtener la universidad.`);
     }
 
@@ -72,16 +67,14 @@ async function getUniversityData(slug: string): Promise<UniversityDetail | null>
 
   } catch (error) {
     console.error("Error fetching university data:", error);
-    // Podrías lanzar el error para una página de error genérica
-    // throw error;
-    return null; // O devolver null para manejarlo en la página
+    return null;
   }
 }
 
 
-// --- Componente de Página (Server Component) ---
-export default async function UniversityPage({ params }: { params: { slug: string } }) {
-  const universityData = await getUniversityData(params.slug);
+export default async function UniversityPage({ params }: { params: any }) {
+  const { slug } = await params
+  const universityData = await getUniversityData(slug);
 
   // Si no se encontraron datos (404 u otro error manejado como null)
   if (!universityData) {
@@ -110,14 +103,13 @@ export default async function UniversityPage({ params }: { params: { slug: strin
 
       {/* Sección de Carreras */}
       <section>
-        <h2 className="text-2xl font-semibold mb-5 border-b pb-2">Carreras Ofrecidas</h2>
+        <h2 className="text-2xl font-semibold mb-5 border-b pb-2">Carreras</h2>
         {universityData.careers && universityData.careers.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {universityData.careers.map((career) => (
               <Link
                 key={career.id}
-                // Enlace a la futura página de la carrera
-                href={`/universidades/${universityData.slug}/carreras/${career.slug}`}
+                href={`/${universityData.slug}/${career.slug}`}
                 passHref
                 className="block hover:shadow-md transition-shadow duration-200 rounded-lg" // Efecto hover en el enlace
               >
@@ -142,8 +134,9 @@ export default async function UniversityPage({ params }: { params: { slug: strin
 }
 
 // Opcional: Generar Metadata Dinámica
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const universityData = await getUniversityData(params.slug);
+export async function generateMetadata({ params }: { params: any }) {
+  const { slug } = await params
+  const universityData = await getUniversityData(slug);
   if (!universityData) {
     return { title: 'Universidad no encontrada' };
   }
@@ -152,4 +145,3 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     description: universityData.description || `Información sobre ${universityData.name}`,
   };
 }
-
