@@ -47,7 +47,7 @@ async function getUniversityData(slug: string): Promise<UniversityDetail | null>
     return null;
   }
 
-  const universityEndpoint = `${apiUrl}/api/universities/${slug}`; // Asumiendo prefijo /universities/
+  const universityEndpoint = `${apiUrl}/api/university/${slug}`; // Asumiendo prefijo /universities/
 
   try {
     // Fetch con cache revalidada cada cierto tiempo (ej: 1 hora) o bajo demanda
