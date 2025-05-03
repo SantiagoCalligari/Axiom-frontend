@@ -78,9 +78,8 @@ async function getUniversityData(slug: string): Promise<UniversityDetail | null>
   }
 }
 
-
 // --- Componente de Página (Server Component) ---
-export default async function UniversityPage({ params }: { params: { slug: string } }) {
+export default async function UniversityPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const universityData = await getUniversityData(slug);
 
@@ -143,7 +142,7 @@ export default async function UniversityPage({ params }: { params: { slug: strin
 }
 
 // Opcional: Generar Metadata Dinámica
-export async function generateMetadata({ params }: { params: { slug: string } }) {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const universityData = await getUniversityData(slug);
   if (!universityData) {
