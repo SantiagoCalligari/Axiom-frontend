@@ -44,7 +44,7 @@ async function getUniversityData(slug: string): Promise<UniversityDetail | null>
     return null;
   }
 
-  const universityEndpoint = `${apiUrl}/api/${slug}`;
+  const universityEndpoint = `${apiUrl}/api/university/${slug}`;
 
   try {
     const response = await fetch(universityEndpoint, {
