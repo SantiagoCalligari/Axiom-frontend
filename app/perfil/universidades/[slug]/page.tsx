@@ -81,7 +81,8 @@ async function getUniversityData(slug: string): Promise<UniversityDetail | null>
 
 // --- Componente de Página (Server Component) ---
 export default async function UniversityPage({ params }: { params: { slug: string } }) {
-  const universityData = await getUniversityData(params.slug);
+  const { slug } = await params;
+  const universityData = await getUniversityData(slug);
 
   // Si no se encontraron datos (404 u otro error manejado como null)
   if (!universityData) {
@@ -143,7 +144,8 @@ export default async function UniversityPage({ params }: { params: { slug: strin
 
 // Opcional: Generar Metadata Dinámica
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const universityData = await getUniversityData(params.slug);
+  const { slug } = await params;
+  const universityData = await getUniversityData(slug);
   if (!universityData) {
     return { title: 'Universidad no encontrada' };
   }
@@ -152,4 +154,3 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     description: universityData.description || `Información sobre ${universityData.name}`,
   };
 }
-
