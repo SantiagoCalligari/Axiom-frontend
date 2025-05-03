@@ -1,28 +1,24 @@
 // app/page.tsx
-"use client";
+"use client"; // Esta página ya era cliente por la búsqueda interactiva
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Fleur_De_Leah } from "next/font/google";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoginModal } from "@/components/auth/LoginModal";
-// Corrected import path for AuthContext based on previous examples
-import { useAuth } from "@/app/context/AuthContext";
+import { useAuth } from "@/app/context/AuthContext"; // Corregido
 import { toast } from "sonner";
 import { RegisterModal } from "@/components/auth/RegisterModal";
-import Link from "next/link"; // <-- Import Link
-import { Skeleton } from "@/components/ui/skeleton"; // <-- Import Skeleton
+import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// University Interface (keep as before)
+// ... (University interface, SearchIcon, fleur, etc. se mantienen igual) ...
 interface University {
   id: number;
   name: string;
+  slug: string; // Asegúrate que la interfaz incluya el slug
 }
 
-// Font Initialization (keep as before)
-const fleur = Fleur_De_Leah({ weight: "400", subsets: ["latin"] });
-
-// SearchIcon Component (keep as before)
 function SearchIcon(props: React.SVGProps<SVGSVGElement>) {
   // ... (SVG code remains the same)
   return (
@@ -44,21 +40,26 @@ function SearchIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+const fleur = Fleur_De_Leah({ weight: "400", subsets: ["latin"] });
+
+
 export default function Home() {
+  // ... (hooks: useAuth, useState, useRef se mantienen igual) ...
   const { token, logout, isLoading: isAuthLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [results, setResults] = useState<University[]>([]);
+  const [results, setResults] = useState<University[]>([]); // Usa la interfaz actualizada
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
+
   const handleLogout = () => {
     logout();
-    toast.info("Sesión cerrada."); // Spanish
+    toast.info("Sesión cerrada.");
   };
 
-  // --- Search Logic (remains the same) ---
-  const fetchUniversities = useCallback(async ( // Added useCallback and dependency array
+  // --- Search Logic (fetchUniversities, useEffects se mantienen igual) ---
+  const fetchUniversities = useCallback(async (
     query: string,
     signal: AbortSignal,
   ): Promise<University[]> => {
@@ -73,6 +74,7 @@ export default function Home() {
 
     try {
       const params = new URLSearchParams({ search: query, limit: "8" });
+      // Asegúrate que la API de búsqueda devuelva el 'slug'
       const response = await fetch(
         `${apiUrl}/api/universities?${params.toString()}`,
         {
@@ -91,7 +93,7 @@ export default function Home() {
       }
 
       const data = await response.json();
-      return data.data || [];
+      return data.data || []; // Asume que devuelve { data: [...] }
     } catch (error) {
       if ((error as Error).name === 'AbortError') {
         console.log('Fetch abortado exitosamente');
@@ -99,7 +101,7 @@ export default function Home() {
       }
       console.error("Error de búsqueda:", error);
       toast.error(
-        error instanceof Error ? error.message : "Falló la búsqueda.", // Spanish
+        error instanceof Error ? error.message : "Falló la búsqueda.",
       );
       return [];
     } finally {
@@ -107,7 +109,7 @@ export default function Home() {
         setIsSearchLoading(false);
       }
     }
-  }, []); // Empty dependency array for useCallback
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -139,7 +141,6 @@ export default function Home() {
       console.log("Abortando fetch para:", searchTerm);
       controller.abort();
     };
-    // Include fetchUniversities in dependency array as it's defined with useCallback
   }, [searchTerm, fetchUniversities]);
 
   useEffect(() => {
@@ -159,7 +160,7 @@ export default function Home() {
   // --- End Search Logic ---
 
 
-  // Auth Loading State - Added Skeletons for header
+  // ... (Auth Loading State se mantiene igual) ...
   if (isAuthLoading) {
     return (
       <div className="relative flex min-h-screen flex-col bg-gray-200">
@@ -182,23 +183,21 @@ export default function Home() {
     );
   }
 
+
   return (
     <div className="relative flex min-h-screen flex-col bg-gray-200">
-      {/* Conditional Header Buttons */}
+      {/* ... (Conditional Header Buttons se mantiene igual) ... */}
       <div className="absolute top-4 right-4 flex items-center gap-x-3 p-4 sm:top-6 sm:right-6">
         {token ? (
-          // --- User is logged in ---
           <>
-            {/* Link to Profile Page */}
             <Link href="/perfil" passHref>
-              <Button variant="outline">Perfil</Button> {/* Spanish */}
+              <Button variant="outline">Perfil</Button>
             </Link>
             <Button variant="ghost" onClick={handleLogout}>
-              Salir {/* Spanish */}
+              Salir
             </Button>
           </>
         ) : (
-          // --- User is logged out ---
           <>
             <LoginModal />
             <RegisterModal />
@@ -206,32 +205,30 @@ export default function Home() {
         )}
       </div>
 
-      {/* Centering Container (remains the same) */}
+      {/* ... (Centering Container, Content Block, Heading, Subtitle se mantienen igual) ... */}
       <div className="flex flex-1 items-center justify-center p-4">
-        {/* Content Block (remains the same) */}
         <div className="flex w-full flex-col items-center text-center mb-16 sm:mb-20">
-          {/* Heading (remains the same) */}
           <h1
             className={`mb-1 text-8xl font-medium text-blue-700 sm:text-9xl ${fleur.className}`}
           >
             Axiom
           </h1>
-          {/* Subtitle (remains the same) */}
           <p
             className={`mb-6 text-lg text-gray-600 sm:text-xl ${fleur.className}`}
           >
             Por estudiantes, Para estudiantes
           </p>
 
-          {/* --- Search Bar Section with Dropdown (remains the same) --- */}
+          {/* --- Search Bar Section with Dropdown --- */}
           <div
             ref={searchContainerRef}
             className="relative w-full max-w-2xl px-4 md:px-0"
           >
+            {/* ... (Input y Search Icon Button se mantienen igual) ... */}
             <div className="relative flex items-center">
               <Input
                 type="search"
-                placeholder="Buscá tu Universidad" // Spanish
+                placeholder="Buscá tu Universidad"
                 className="w-full h-14 rounded-full px-6 py-3 pr-12 text-lg font-medium shadow-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-400"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -241,39 +238,38 @@ export default function Home() {
                 variant="ghost"
                 size="icon"
                 className="absolute right-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                aria-label="Buscar" // Spanish
+                aria-label="Buscar"
               >
                 <SearchIcon className="h-6 w-6" />
               </Button>
             </div>
 
-            {/* --- Dropdown Menu (remains the same) --- */}
+
+            {/* --- Dropdown Menu --- */}
             {isDropdownVisible && searchTerm.trim() && (
               <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-300 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800">
                 {isSearchLoading ? (
                   <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                    Cargando... {/* Spanish */}
+                    Cargando...
                   </div>
                 ) : results.length > 0 ? (
                   <ul className="max-h-60 overflow-y-auto py-1">
                     {results.map((uni) => (
-                      <li
-                        key={uni.id}
-                        className="cursor-pointer px-4 py-2 text-left text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
-                        onClick={() => {
-                          setSearchTerm(uni.name);
-                          setIsDropdownVisible(false);
-                          setResults([]);
-                          console.log("Universidad seleccionada:", uni); // Spanish
-                        }}
-                      >
-                        {uni.name}
+                      <li key={uni.id}> {/* Mover key al li */}
+                        {/* Envolver el contenido del li en Link */}
+                        <Link
+                          href={`/universidades/${uni.slug}`}
+                          className="block cursor-pointer px-4 py-2 text-left text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                          onClick={() => setIsDropdownVisible(false)} // Opcional: cerrar dropdown al hacer click
+                        >
+                          {uni.name}
+                        </Link>
                       </li>
                     ))}
                   </ul>
                 ) : (
                   <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                    No se encontraron resultados. {/* Spanish */}
+                    No se encontraron resultados.
                   </div>
                 )}
               </div>
