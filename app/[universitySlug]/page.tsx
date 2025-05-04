@@ -17,7 +17,7 @@ interface Career {
   id: number;
   university_id: number;
   name: string;
-  universitySlug: string;
+  slug: string;
   description: string | null;
   created_at: string;
   updated_at: string;
@@ -26,7 +26,7 @@ interface Career {
 interface UniversityDetail {
   id: number;
   name: string;
-  universitySlug: string;
+  slug: string;
   description: string | null;
   created_at: string;
   updated_at: string;
@@ -109,7 +109,7 @@ export default async function UniversityPage({ params }: { params: any }) {
             {universityData.careers.map((career) => (
               <Link
                 key={career.id}
-                href={`/${universityData.universitySlug}/${career.universitySlug}`}
+                href={`/${universityData.slug}/${career.slug}`}
                 passHref
                 className="block hover:shadow-md transition-shadow duration-200 rounded-lg" // Efecto hover en el enlace
               >
