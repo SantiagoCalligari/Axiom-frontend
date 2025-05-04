@@ -258,7 +258,7 @@ export default function Home() {
                       <li key={uni.id}> {/* Mover key al li */}
                         {/* Envolver el contenido del li en Link */}
                         <Link
-                          href={`/universidades/${uni.slug}`}
+                          href={`/${uni.slug}`}
                           className="block cursor-pointer px-4 py-2 text-left text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
                           onClick={() => setIsDropdownVisible(false)} // Opcional: cerrar dropdown al hacer click
                         >
