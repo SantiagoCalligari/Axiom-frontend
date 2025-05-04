@@ -1,8 +1,10 @@
-// app/universidades/[universitySlug]/page.tsx
+// app/[universitySlug]/page.tsx
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+// Link no se usa directamente aquí ahora
+// import Link from 'next/link';
+// Button y ArrowLeft no se usan directamente aquí
+// import { Button } from '@/components/ui/button';
+// import { ArrowLeft } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -10,17 +12,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { BackButton } from '@/components/ui/BackButton'; // Crearemos este componente
+import { BackButton } from '@/components/ui/BackButton';
+import { CareerList } from '@/components/lists/CareerList'; // Importar CareerList
 
 // --- Interfaces para los datos de la API ---
 interface Career {
   id: number;
-  university_id: number;
+  // university_id no es necesario si no se usa en CareerList
   name: string;
   slug: string;
-  description: string | null;
-  created_at: string;
-  updated_at: string;
+  // description no es necesario si no se usa en CareerList
+  // created_at no es necesario
+  // updated_at no es necesario
 }
 
 interface UniversityDetail {
@@ -28,8 +31,8 @@ interface UniversityDetail {
   name: string;
   slug: string;
   description: string | null;
-  created_at: string;
-  updated_at: string;
+  // created_at no es necesario
+  // updated_at no es necesario
   careers: Career[];
 }
 
@@ -37,13 +40,14 @@ interface ApiResponse {
   data: UniversityDetail;
 }
 
+// --- Función para obtener datos de la universidad ---
 async function getUniversityData(universitySlug: string): Promise<UniversityDetail | null> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) {
     console.error("URL de la API no configurada.");
     return null;
   }
-
+  // Usar la ruta API correcta según route:list
   const universityEndpoint = `${apiUrl}/api/university/${universitySlug}`;
 
   try {
@@ -51,14 +55,15 @@ async function getUniversityData(universitySlug: string): Promise<UniversityDeta
       headers: {
         Accept: "application/json",
       },
-      next: { revalidate: 3600 }
+      next: { revalidate: 3600 } // Revalidar cada hora
     });
 
     if (response.status === 404) {
-      return null;
+      return null; // Indicador de no encontrado
     }
 
     if (!response.ok) {
+      // Lanza error para otros fallos de API
       throw new Error(`Error ${response.status}: No se pudo obtener la universidad.`);
     }
 
@@ -67,13 +72,14 @@ async function getUniversityData(universitySlug: string): Promise<UniversityDeta
 
   } catch (error) {
     console.error("Error fetching university data:", error);
-    return null;
+    return null; // O devolver null para manejarlo en la página
   }
 }
 
-
-export default async function UniversityPage({ params }: { params: any }) {
-  const { universitySlug } = await params
+// --- Componente de Página (Server Component) ---
+// MANTENIENDO la forma de obtener params solicitada
+export default async function UniversityPage({ params }: { params: Promise<{ universitySlug: string }> }) {
+  const { universitySlug } = await params; // Acceder a params como solicitaste
   const universityData = await getUniversityData(universitySlug);
 
   // Si no se encontraron datos (404 u otro error manejado como null)
@@ -84,14 +90,14 @@ export default async function UniversityPage({ params }: { params: any }) {
   return (
     <div className="container mx-auto max-w-5xl px-4 py-8">
       {/* Encabezado con Botón Volver y Título */}
-      <div className="mb-8 flex items-center gap-x-4">
-        <BackButton /> {/* Usar el componente cliente para router.back() */}
+      <div className="mb-8 flex items-center justify-between"> {/* Usar justify-between */}
         <h1 className="text-3xl md:text-4xl font-bold">{universityData.name}</h1>
+        <BackButton /> {/* Botón a la derecha */}
       </div>
 
       {/* Descripción de la Universidad */}
       {universityData.description && (
-        <Card className="mb-8 bg-muted/30"> {/* Fondo sutil */}
+        <Card className="mb-8 bg-muted/30 border"> {/* Fondo sutil y borde */}
           <CardHeader>
             <CardTitle className="text-lg">Descripción</CardTitle>
           </CardHeader>
@@ -101,41 +107,23 @@ export default async function UniversityPage({ params }: { params: any }) {
         </Card>
       )}
 
-      {/* Sección de Carreras */}
+      {/* Sección de Carreras con Búsqueda */}
       <section>
-        <h2 className="text-2xl font-semibold mb-5 border-b pb-2">Carreras</h2>
-        {universityData.careers && universityData.careers.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {universityData.careers.map((career) => (
-              <Link
-                key={career.id}
-                href={`/${universityData.slug}/${career.slug}`}
-                passHref
-                className="block hover:shadow-md transition-shadow duration-200 rounded-lg" // Efecto hover en el enlace
-              >
-                <Card className="h-full flex flex-col"> {/* h-full para igualar altura en grid */}
-                  <CardHeader>
-                    <CardTitle className="text-lg">{career.name}</CardTitle>
-                    {/* Podríamos añadir descripción de carrera si existiera */}
-                    {/* {career.description && <CardDescription>{career.description}</CardDescription>} */}
-                  </CardHeader>
-                  {/* Podríamos añadir más contenido si fuera necesario */}
-                  {/* <CardContent>...</CardContent> */}
-                </Card>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <p className="text-muted-foreground">No se encontraron carreras para esta universidad.</p>
-        )}
+        <h2 className="text-2xl font-semibold mb-6 border-b pb-2">Carreras Ofrecidas</h2> {/* Aumentado mb */}
+        {/* Usar el componente CareerList en lugar del mapeo directo */}
+        <CareerList
+          careers={universityData.careers || []}
+          universitySlug={universityData.slug} // Pasar el slug de la universidad actual
+        />
       </section>
     </div>
   );
 }
 
-// Opcional: Generar Metadata Dinámica
-export async function generateMetadata({ params }: { params: any }) {
-  const { universitySlug } = await params
+// --- Generar Metadata Dinámica ---
+// MANTENIENDO la forma de obtener params solicitada
+export async function generateMetadata({ params }: { params: Promise<{ universitySlug: string }> }) {
+  const { universitySlug } = await params; // Acceder a params como solicitaste
   const universityData = await getUniversityData(universitySlug);
   if (!universityData) {
     return { title: 'Universidad no encontrada' };
