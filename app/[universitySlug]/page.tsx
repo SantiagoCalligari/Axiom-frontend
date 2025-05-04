@@ -1,4 +1,4 @@
-// app/universidades/[slug]/page.tsx
+// app/universidades/[universitySlug]/page.tsx
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ interface Career {
   id: number;
   university_id: number;
   name: string;
-  slug: string;
+  universitySlug: string;
   description: string | null;
   created_at: string;
   updated_at: string;
@@ -26,7 +26,7 @@ interface Career {
 interface UniversityDetail {
   id: number;
   name: string;
-  slug: string;
+  universitySlug: string;
   description: string | null;
   created_at: string;
   updated_at: string;
@@ -37,14 +37,14 @@ interface ApiResponse {
   data: UniversityDetail;
 }
 
-async function getUniversityData(slug: string): Promise<UniversityDetail | null> {
+async function getUniversityData(universitySlug: string): Promise<UniversityDetail | null> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) {
     console.error("URL de la API no configurada.");
     return null;
   }
 
-  const universityEndpoint = `${apiUrl}/api/university/${slug}`;
+  const universityEndpoint = `${apiUrl}/api/university/${universitySlug}`;
 
   try {
     const response = await fetch(universityEndpoint, {
@@ -73,8 +73,8 @@ async function getUniversityData(slug: string): Promise<UniversityDetail | null>
 
 
 export default async function UniversityPage({ params }: { params: any }) {
-  const { slug } = await params
-  const universityData = await getUniversityData(slug);
+  const { universitySlug } = await params
+  const universityData = await getUniversityData(universitySlug);
 
   // Si no se encontraron datos (404 u otro error manejado como null)
   if (!universityData) {
@@ -109,7 +109,7 @@ export default async function UniversityPage({ params }: { params: any }) {
             {universityData.careers.map((career) => (
               <Link
                 key={career.id}
-                href={`/${universityData.slug}/${career.slug}`}
+                href={`/${universityData.universitySlug}/${career.universitySlug}`}
                 passHref
                 className="block hover:shadow-md transition-shadow duration-200 rounded-lg" // Efecto hover en el enlace
               >
@@ -135,8 +135,8 @@ export default async function UniversityPage({ params }: { params: any }) {
 
 // Opcional: Generar Metadata Dinámica
 export async function generateMetadata({ params }: { params: any }) {
-  const { slug } = await params
-  const universityData = await getUniversityData(slug);
+  const { universitySlug } = await params
+  const universityData = await getUniversityData(universitySlug);
   if (!universityData) {
     return { title: 'Universidad no encontrada' };
   }
