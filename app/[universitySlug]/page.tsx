@@ -50,7 +50,7 @@ async function getUniversityData(slug: string): Promise<UniversityDetail | null>
 }
 
 // --- Componente de Página ---
-export default async function UniversityPage({ params }: { params: { universitySlug: string } }) {
+export default async function UniversityPage({ params }: { params: Promise<{ universitySlug: string }> }) {
   const { universitySlug } = await params; // Manteniendo tu forma de obtener params
   const universityData = await getUniversityData(universitySlug);
 
@@ -98,7 +98,7 @@ export default async function UniversityPage({ params }: { params: { universityS
 }
 
 // --- Generar Metadata ---
-export async function generateMetadata({ params }: { params: { universitySlug: string } }) {
+export async function generateMetadata({ params }: { params: Promise<{ universitySlug: string }> }) {
   const { universitySlug } = await params; // Manteniendo tu forma de obtener params
   const universityData = await getUniversityData(universitySlug);
 

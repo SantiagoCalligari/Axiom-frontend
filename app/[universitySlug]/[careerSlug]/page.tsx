@@ -49,7 +49,7 @@ async function getUniversityInfo(slug: string): Promise<UniversityInfo | null> {
 }
 
 // --- Componente de Página ---
-export default async function CareerPage({ params }: { params: { universitySlug: string, careerSlug: string } }) {
+export default async function CareerPage({ params }: { params: Promise<{ universitySlug: string, careerSlug: string }> }) {
   const { universitySlug, careerSlug } = await params; // Manteniendo tu forma
   const [careerData, universityInfo] = await Promise.all([
     getCareerData(universitySlug, careerSlug),
@@ -102,7 +102,7 @@ export default async function CareerPage({ params }: { params: { universitySlug:
 }
 
 // --- Generar Metadata ---
-export async function generateMetadata({ params }: { params: { universitySlug: string, careerSlug: string } }) {
+export async function generateMetadata({ params }: { params: Promise<{ universitySlug: string, careerSlug: string }> }) {
   const { universitySlug, careerSlug } = await params; // Manteniendo tu forma
   const careerData = await getCareerData(universitySlug, careerSlug);
   // Podríamos obtener universityInfo aquí también para el título si quisiéramos
