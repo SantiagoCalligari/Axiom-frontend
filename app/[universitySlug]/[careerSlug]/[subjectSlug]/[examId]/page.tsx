@@ -13,7 +13,7 @@ import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { Separator } from '@/components/ui/separator';
 // Ya no necesitamos Textarea, Button, MessageCircle, Send, User directamente aquí
 // import { Textarea } from '@/components/ui/textarea';
-// import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 // import { MessageCircle, Send, User } from 'lucide-react';
 
 import { Check, Download, X } from 'lucide-react'; // Mantener iconos si se usan para Badge/Botón Descarga
