@@ -1,9 +1,10 @@
+// FILE: app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/app/context/AuthContext"; // Adjust path if needed
-import { Toaster } from "@/components/ui/sonner"; // Import Toaster
-
+import { AuthProvider } from "@/app/context/AuthContext";
+import { Toaster } from "@/components/ui/sonner";
+import { LoginModal } from "@/components/auth/LoginModal"; // Import LoginModal
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,12 +22,11 @@ export const metadata: Metadata = {
 };
 const componentStyle = {
   backgroundImage: "url('/background.svg')",
-  // Add other background properties as needed
-  backgroundSize: "cover", // Example: Cover the entire element
-  backgroundPosition: "center", // Example: Center the image
-  backgroundRepeat: "no-repeat", // Example: Don't repeat the image
-  minHeight: "100vh", // Example: Ensure the div takes at least the full viewport height
-  color: "white", // Example: Set text color for visibility
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  backgroundRepeat: "no-repeat",
+  minHeight: "100vh",
+  // color: "white", // Text color should be handled by components for better contrast
 };
 export default function RootLayout({
   children,
@@ -36,11 +36,13 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased ${componentStyle}`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        style={componentStyle} // Apply style directly for background
       >
         <AuthProvider>
           {children}
-          <Toaster richColors position="top-right" /> {/* Add Toaster here */}
+          <LoginModal /> {/* Render LoginModal here so it's globally available */}
+          <Toaster richColors position="top-right" />
         </AuthProvider>
       </body>
     </html>
