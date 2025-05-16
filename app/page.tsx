@@ -1,26 +1,25 @@
-// app/page.tsx
-"use client"; // Esta página ya era cliente por la búsqueda interactiva
+// FILE: app/page.tsx
+"use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Fleur_De_Leah } from "next/font/google";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LoginModal } from "@/components/auth/LoginModal";
-import { useAuth } from "@/app/context/AuthContext"; // Corregido
+// LoginModal is now global, trigger via useAuth
+// import { LoginModal } from "@/components/auth/LoginModal";
+import { useAuth } from "@/app/context/AuthContext";
 import { toast } from "sonner";
 import { RegisterModal } from "@/components/auth/RegisterModal";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// ... (University interface, SearchIcon, fleur, etc. se mantienen igual) ...
 interface University {
   id: number;
   name: string;
-  slug: string; // Asegúrate que la interfaz incluya el slug
+  slug: string;
 }
 
 function SearchIcon(props: React.SVGProps<SVGSVGElement>) {
-  // ... (SVG code remains the same)
   return (
     <svg
       {...props}
@@ -42,74 +41,66 @@ function SearchIcon(props: React.SVGProps<SVGSVGElement>) {
 
 const fleur = Fleur_De_Leah({ weight: "400", subsets: ["latin"] });
 
-
 export default function Home() {
-  // ... (hooks: useAuth, useState, useRef se mantienen igual) ...
-  const { token, logout, isLoading: isAuthLoading } = useAuth();
+  const {
+    token,
+    logout,
+    isLoading: isAuthLoading,
+    openLoginModal,
+    isAuthenticated, // Use isAuthenticated for conditional rendering
+  } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [results, setResults] = useState<University[]>([]); // Usa la interfaz actualizada
+  const [results, setResults] = useState<University[]>([]);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
-
 
   const handleLogout = () => {
     logout();
     toast.info("Sesión cerrada.");
   };
 
-  // --- Search Logic (fetchUniversities, useEffects se mantienen igual) ---
-  const fetchUniversities = useCallback(async (
-    query: string,
-    signal: AbortSignal,
-  ): Promise<University[]> => {
-    // ... (fetchUniversities implementation remains the same)
-    setIsSearchLoading(true);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiUrl) {
-      console.error("URL de la API no configurada.");
-      setIsSearchLoading(false);
-      return [];
-    }
-
-    try {
-      const params = new URLSearchParams({ search: query, limit: "8" });
-      // Asegúrate que la API de búsqueda devuelva el 'slug'
-      const response = await fetch(
-        `${apiUrl}/api/universities?${params.toString()}`,
-        {
-          headers: { Accept: "application/json" },
-          signal,
-        },
-      );
-
-      if (signal.aborted) {
-        console.log("Fetch abortado para:", query);
-        return [];
-      }
-
-      if (!response.ok) {
-        throw new Error(`Error al buscar universidades (status: ${response.status})`);
-      }
-
-      const data = await response.json();
-      return data.data || []; // Asume que devuelve { data: [...] }
-    } catch (error) {
-      if ((error as Error).name === 'AbortError') {
-        console.log('Fetch abortado exitosamente');
-        return [];
-      }
-      console.error("Error de búsqueda:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Falló la búsqueda.",
-      );
-      return [];
-    } finally {
-      if (!signal.aborted) {
+  const fetchUniversities = useCallback(
+    async (query: string, signal: AbortSignal): Promise<University[]> => {
+      setIsSearchLoading(true);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) {
+        console.error("URL de la API no configurada.");
         setIsSearchLoading(false);
+        return [];
       }
-    }
-  }, []);
+
+      try {
+        const params = new URLSearchParams({ search: query, limit: "8" });
+        const response = await fetch(
+          `${apiUrl}/api/universities?${params.toString()}`,
+          {
+            headers: { Accept: "application/json" },
+            signal,
+          },
+        );
+
+        if (signal.aborted) return [];
+        if (!response.ok)
+          throw new Error(
+            `Error al buscar universidades (status: ${response.status})`,
+          );
+
+        const data = await response.json();
+        return data.data || [];
+      } catch (error) {
+        if ((error as Error).name === "AbortError") return [];
+        console.error("Error de búsqueda:", error);
+        toast.error(
+          error instanceof Error ? error.message : "Falló la búsqueda.",
+        );
+        return [];
+      } finally {
+        if (!signal.aborted) setIsSearchLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -117,30 +108,21 @@ export default function Home() {
 
     if (searchTerm.trim()) {
       setIsDropdownVisible(true);
-      setIsSearchLoading(true);
-
+      setIsSearchLoading(true); // Ensure loading state is true before fetch
       fetchUniversities(searchTerm, signal)
         .then((fetchedResults) => {
-          if (!signal.aborted) {
-            setResults(fetchedResults);
-          }
+          if (!signal.aborted) setResults(fetchedResults);
         })
         .catch((error) => {
-          if ((error as Error).name !== 'AbortError') {
+          if ((error as Error).name !== "AbortError")
             console.error("Error de fetch no manejado en effect:", error);
-          }
         });
-
     } else {
       setResults([]);
       setIsDropdownVisible(false);
-      setIsSearchLoading(false);
+      setIsSearchLoading(false); // Ensure loading state is false if no search term
     }
-
-    return () => {
-      console.log("Abortando fetch para:", searchTerm);
-      controller.abort();
-    };
+    return () => controller.abort();
   }, [searchTerm, fetchUniversities]);
 
   useEffect(() => {
@@ -153,23 +135,17 @@ export default function Home() {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  // --- End Search Logic ---
 
-
-  // ... (Auth Loading State se mantiene igual) ...
-  if (isAuthLoading) {
+  if (isAuthLoading && !token) {
+    // Show full page skeleton only on initial auth load and no token yet
     return (
       <div className="relative flex min-h-screen flex-col bg-gray-200">
-        {/* Skeleton Header */}
         <div className="absolute top-4 right-4 flex h-10 items-center gap-x-3 p-4 sm:top-6 sm:right-6">
           <Skeleton className="h-10 w-20 rounded-md" />
           <Skeleton className="h-10 w-24 rounded-md" />
         </div>
-        {/* Skeleton Body */}
         <div className="flex flex-1 items-center justify-center p-4">
           <div className="flex w-full animate-pulse flex-col items-center text-center mb-16 sm:mb-20">
             <div className="mb-1 h-20 w-3/5 rounded bg-gray-300 sm:h-24"></div>
@@ -183,12 +159,10 @@ export default function Home() {
     );
   }
 
-
   return (
     <div className="relative flex min-h-screen flex-col bg-gray-200">
-      {/* ... (Conditional Header Buttons se mantiene igual) ... */}
       <div className="absolute top-4 right-4 flex items-center gap-x-3 p-4 sm:top-6 sm:right-6">
-        {token ? (
+        {isAuthenticated ? ( // Use isAuthenticated
           <>
             <Link href="/perfil" passHref>
               <Button variant="outline">Perfil</Button>
@@ -199,13 +173,15 @@ export default function Home() {
           </>
         ) : (
           <>
-            <LoginModal />
-            <RegisterModal />
+            {/* Button to trigger global LoginModal */}
+            <Button variant="outline" onClick={openLoginModal}>
+              Entrar
+            </Button>
+            <RegisterModal /> {/* RegisterModal can keep its own trigger for now */}
           </>
         )}
       </div>
 
-      {/* ... (Centering Container, Content Block, Heading, Subtitle se mantienen igual) ... */}
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="flex w-full flex-col items-center text-center mb-16 sm:mb-20">
           <h1
@@ -219,12 +195,10 @@ export default function Home() {
             Por estudiantes, Para estudiantes
           </p>
 
-          {/* --- Search Bar Section with Dropdown --- */}
           <div
             ref={searchContainerRef}
             className="relative w-full max-w-2xl px-4 md:px-0"
           >
-            {/* ... (Input y Search Icon Button se mantienen igual) ... */}
             <div className="relative flex items-center">
               <Input
                 type="search"
@@ -244,8 +218,6 @@ export default function Home() {
               </Button>
             </div>
 
-
-            {/* --- Dropdown Menu --- */}
             {isDropdownVisible && searchTerm.trim() && (
               <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-300 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800">
                 {isSearchLoading ? (
@@ -255,12 +227,11 @@ export default function Home() {
                 ) : results.length > 0 ? (
                   <ul className="max-h-60 overflow-y-auto py-1">
                     {results.map((uni) => (
-                      <li key={uni.id}> {/* Mover key al li */}
-                        {/* Envolver el contenido del li en Link */}
+                      <li key={uni.id}>
                         <Link
                           href={`/${uni.slug}`}
                           className="block cursor-pointer px-4 py-2 text-left text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
-                          onClick={() => setIsDropdownVisible(false)} // Opcional: cerrar dropdown al hacer click
+                          onClick={() => setIsDropdownVisible(false)}
                         >
                           {uni.name}
                         </Link>
@@ -274,9 +245,7 @@ export default function Home() {
                 )}
               </div>
             )}
-            {/* --- End Dropdown Menu --- */}
           </div>
-          {/* --- End Search Bar Section --- */}
         </div>
       </div>
     </div>

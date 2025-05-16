@@ -1,7 +1,7 @@
-// components/auth/LoginModal.tsx
+// FILE: components/auth/LoginModal.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,18 +10,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  // DialogTrigger, // No longer needed if controlled by context
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/app/context/AuthContext";
 import { toast } from "sonner";
 
-// Interfaces (keep as before)
 interface LoginResponse {
   access_token: string;
   token_type: string;
-  expires_at: string;
+  expires_at: string; // Or Date
 }
 interface ErrorResponse {
   message: string;
@@ -29,22 +28,35 @@ interface ErrorResponse {
 }
 
 export function LoginModal() {
-  const [isOpen, setIsOpen] = useState(false);
+  const {
+    login,
+    isLoginModalOpen,
+    closeLoginModal,
+    isLoading: isAuthLoading,
+  } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false); // Local submitting state
+
+  useEffect(() => {
+    // Reset form if modal is closed externally
+    if (!isLoginModalOpen) {
+      setEmail("");
+      setPassword("");
+      setIsSubmitting(false);
+    }
+  }, [isLoginModalOpen]);
 
   const handleCredentialsSubmit = async (
     event: React.FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
-    setIsLoading(true);
+    setIsSubmitting(true);
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!apiUrl) {
-      toast.error("API URL is not configured.");
-      setIsLoading(false);
+      toast.error("URL de la API no configurada.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -66,7 +78,8 @@ export function LoginModal() {
       const result: LoginResponse | ErrorResponse = await response.json();
 
       if (!response.ok) {
-        let errorMessage = "Login failed. Please check your credentials.";
+        let errorMessage =
+          "Error al iniciar sesión. Verifica tus credenciales.";
         if ("message" in result && result.message) {
           errorMessage = result.message;
           if (result.errors) {
@@ -78,55 +91,39 @@ export function LoginModal() {
       }
 
       const loginData = result as LoginResponse;
-      login(loginData.access_token);
-      toast.success("Logged in successfully!");
-      setIsOpen(false);
-      setEmail("");
-      setPassword("");
+      await login(loginData.access_token); // AuthContext handles success toast & closing modal
+      // setEmail(""); // Reset by useEffect on isLoginModalOpen change
+      // setPassword("");
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "An unexpected error occurred.";
+        err instanceof Error ? err.message : "Ocurrió un error inesperado.";
       toast.error(message);
       console.error("Login error:", err);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const handleGoogleLoginClick = () => {
-    // --- Option 1: Direct Redirect (Simpler) ---
-    // Redirect the user directly to the Laravel backend route that starts the Google OAuth flow.
-    // The backend will handle the redirect to Google and the callback.
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (apiUrl) {
-      // Make sure this route exists in your Laravel routes/web.php or routes/api.php
       window.location.href = `${apiUrl}/login/google/redirect`;
     } else {
-      toast.error("API URL not configured for Google Login.");
+      toast.error("URL de la API no configurada para el inicio con Google.");
     }
-
-    // --- Option 2: Open Popup (More complex, better UX potentially) ---
-    // This would involve opening a popup window for the Google flow and listening
-    // for messages or URL changes to get the token back. More complex to implement reliably.
-
-    // --- Placeholder ---
-    // toast.info("Google Login not implemented yet.");
   };
 
-
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      setEmail("");
-      setPassword("");
-    }
-    setIsOpen(open);
-  };
+  // Controlled by AuthContext
+  if (!isLoginModalOpen) {
+    return null;
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
+    <Dialog open={isLoginModalOpen} onOpenChange={closeLoginModal}>
+      {/* DialogTrigger is removed as this modal is controlled by AuthContext */}
+      {/* <DialogTrigger asChild>
         <Button variant="outline">Entrar</Button>
-      </DialogTrigger>
+      </DialogTrigger> */}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Ingresar</DialogTitle>
@@ -135,19 +132,17 @@ export function LoginModal() {
           </DialogDescription>
         </DialogHeader>
 
-        {/* Email/Password Form */}
         <form onSubmit={handleCredentialsSubmit} className="space-y-4">
-          {/* Changed layout: Removed grid-cols-4, using space-y-1 inside divs */}
           <div className="space-y-1">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
-              placeholder="you@example.com" // Added placeholder
+              placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={isLoading}
+              disabled={isSubmitting || isAuthLoading}
             />
           </div>
           <div className="space-y-1">
@@ -158,18 +153,22 @@ export function LoginModal() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={isLoading}
+              disabled={isSubmitting || isAuthLoading}
             />
-            {/* Optional: Add Forgot Password link here */}
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={isLoading} className="w-full">
-              {isLoading ? "Ingresando..." : "Ingresa con tu mail"}
+            <Button
+              type="submit"
+              disabled={isSubmitting || isAuthLoading}
+              className="w-full"
+            >
+              {isSubmitting || isAuthLoading
+                ? "Ingresando..."
+                : "Ingresa con tu mail"}
             </Button>
           </DialogFooter>
         </form>
 
-        {/* Divider */}
         <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t" />
@@ -181,16 +180,15 @@ export function LoginModal() {
           </div>
         </div>
 
-        {/* Google Login Button */}
         <Button
           variant="outline"
           className="w-full flex items-center justify-center gap-x-2"
           onClick={handleGoogleLoginClick}
-          disabled={isLoading} // Disable while email login is processing
+          disabled={isSubmitting || isAuthLoading}
         >
+          {/* Consider adding a Google icon here */}
           Ingresar con Google
         </Button>
-
       </DialogContent>
     </Dialog>
   );
