@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 // --- User Interface (based on your API response) ---
 interface UserRole {
-  // Define if needed, currently an empty array in example
+  name: string;
 }
 
 interface UniversityForUserContext {

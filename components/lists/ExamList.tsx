@@ -202,49 +202,64 @@ export function ExamList({ universitySlug, careerSlug, subjectSlug }: ExamListPr
           </div>
         )}
         <div className={(isLoading || isPending) ? 'opacity-50 transition-opacity' : ''}>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[30%]">Título</TableHead>
-                <TableHead>Profesor</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Fecha</TableHead>
-                <TableHead className="text-center">Resuelto</TableHead>
-                <TableHead className="text-right">Acción</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {!isLoading && exams.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="h-24 text-center text-muted-foreground">No se encontraron exámenes.</TableCell></TableRow>
-              ) : (
-                exams.map((exam) => (
-                  <TableRow key={exam.id}>
-                    <TableCell className="font-medium">{exam.title || '-'}</TableCell>
-                    <TableCell className="text-muted-foreground">{exam.professor_name || '-'}</TableCell>
-                    <TableCell>{exam.exam_type && <Badge variant="secondary">{exam.exam_type}</Badge>}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {exam.exam_date ? new Date(exam.exam_date).toLocaleDateString('es-ES') : (exam.year || '-')}
-                      {exam.semester && !exam.exam_date && ` (${exam.semester})`}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant={exam.is_resolved ? "default" : "outline"} className={exam.is_resolved ? "border-green-600 bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300" : "border-red-600 bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"}>
-                        {exam.is_resolved ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+          <div className="grid gap-2 p-2">
+            {!isLoading && exams.length === 0 ? (
+              <div className="h-24 text-center text-muted-foreground flex items-center justify-center">
+                No se encontraron exámenes.
+              </div>
+            ) : (
+              exams.map((exam) => (
+                <Link
+                  key={exam.id}
+                  href={`/${universitySlug}/${careerSlug}/${subjectSlug}/${exam.id}`}
+                  className={`block p-3 rounded-lg border transition-colors hover:bg-accent/50 ${
+                    exam.is_resolved 
+                      ? 'border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20' 
+                      : 'border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20'
+                  }`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex-grow">
+                      <h3 className="font-medium text-base sm:text-lg">
+                        {exam.title || `Examen #${exam.id}`}
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground mt-1">
+                        {exam.professor_name && (
+                          <span>Prof: {exam.professor_name}</span>
+                        )}
+                        {exam.exam_type && (
+                          <Badge variant="secondary" className="text-xs">
+                            {exam.exam_type}
+                          </Badge>
+                        )}
+                        <span>
+                          {exam.exam_date 
+                            ? new Date(exam.exam_date).toLocaleDateString('es-ES')
+                            : `${exam.year || ''} ${exam.semester || ''}`}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant={exam.is_resolved ? "default" : "outline"}
+                        className={exam.is_resolved 
+                          ? "border-green-600 bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
+                          : "border-red-600 bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
+                        }
+                      >
+                        {exam.is_resolved ? (
+                          <Check className="h-3 w-3 mr-1" />
+                        ) : (
+                          <X className="h-3 w-3 mr-1" />
+                        )}
+                        {exam.is_resolved ? "Resuelto" : "No Resuelto"}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {/* --- CORREGIDO: Link usa exam.id --- */}
-                      <Button asChild variant="outline" size="sm">
-                        {/* Usar exam.id en la URL */}
-                        <Link href={`/${universitySlug}/${careerSlug}/${subjectSlug}/${exam.id}`}>
-                          Ver Examen
-                        </Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
         </div>
       </div>
 

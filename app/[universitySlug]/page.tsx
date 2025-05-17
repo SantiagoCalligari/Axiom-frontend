@@ -3,13 +3,13 @@ import { notFound } from 'next/navigation';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { BackButton } from '@/components/ui/BackButton';
 import { CareerList } from '@/components/lists/CareerList';
-import { Breadcrumbs } from '@/components/ui/Breadcrumbs'; // Importar Breadcrumbs
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
+import CreateCareerButton from './CreateCareerButton';
 
 // --- Interfaces ---
 interface Career {
@@ -27,7 +27,7 @@ interface UniversityDetail {
 interface ApiResponse { data: UniversityDetail; }
 
 // --- Función para obtener datos ---
-async function getUniversityData(slug: string): Promise<UniversityDetail | null> {
+export async function getUniversityData(slug: string): Promise<UniversityDetail | null> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) {
     console.error("URL de la API no configurada.");
@@ -51,7 +51,7 @@ async function getUniversityData(slug: string): Promise<UniversityDetail | null>
 
 // --- Componente de Página ---
 export default async function UniversityPage({ params }: { params: Promise<{ universitySlug: string }> }) {
-  const { universitySlug } = await params; // Manteniendo tu forma de obtener params
+  const { universitySlug } = await params;
   const universityData = await getUniversityData(universitySlug);
 
   if (!universityData) {
@@ -60,8 +60,8 @@ export default async function UniversityPage({ params }: { params: Promise<{ uni
 
   // --- Construir Breadcrumbs ---
   const breadcrumbItems = [
-    { label: "Inicio", href: "/" }, // Enlace a la página principal/búsqueda
-    { label: universityData.name, href: `/${universitySlug}` }, // Item actual
+    { label: "Inicio", href: "/" },
+    { label: universityData.name, href: `/${universitySlug}` },
   ];
 
   return (
@@ -69,7 +69,7 @@ export default async function UniversityPage({ params }: { params: Promise<{ uni
       {/* Encabezado con Breadcrumbs y Botón Volver */}
       <div className="mb-6 flex items-start justify-between">
         <div className='flex-grow pr-4'>
-          <Breadcrumbs items={breadcrumbItems} /> {/* Añadir Breadcrumbs */}
+          <Breadcrumbs items={breadcrumbItems} />
           <h1 className="text-3xl md:text-4xl font-bold mt-1">{universityData.name}</h1>
         </div>
         <div className="flex-shrink-0">
@@ -87,7 +87,10 @@ export default async function UniversityPage({ params }: { params: Promise<{ uni
 
       {/* Sección de Carreras con Búsqueda */}
       <section>
-        <h2 className="text-2xl font-semibold mb-6 border-b pb-2">Carreras Ofrecidas</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-semibold border-b pb-2">Carreras Ofrecidas</h2>
+          <CreateCareerButton universitySlug={universityData.slug} />
+        </div>
         <CareerList
           careers={universityData.careers || []}
           universitySlug={universityData.slug}
@@ -95,19 +98,5 @@ export default async function UniversityPage({ params }: { params: Promise<{ uni
       </section>
     </div>
   );
-}
-
-// --- Generar Metadata ---
-export async function generateMetadata({ params }: { params: Promise<{ universitySlug: string }> }) {
-  const { universitySlug } = await params; // Manteniendo tu forma de obtener params
-  const universityData = await getUniversityData(universitySlug);
-
-  if (!universityData) {
-    return { title: 'Universidad no encontrada' };
-  }
-  return {
-    title: `${universityData.name} | Axiom`,
-    description: universityData.description || `Información sobre ${universityData.name}`,
-  };
 }
 

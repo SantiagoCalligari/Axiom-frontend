@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { RegisterModal } from "@/components/auth/RegisterModal";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
+import CreateUniversityModal from "@/components/admin/CreateUniversityModal";
 
 interface University {
   id: number;
@@ -48,12 +49,14 @@ export default function Home() {
     isLoading: isAuthLoading,
     openLoginModal,
     isAuthenticated, // Use isAuthenticated for conditional rendering
+    user,
   } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<University[]>([]);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -183,27 +186,27 @@ export default function Home() {
       </div>
 
       <div className="flex flex-1 items-center justify-center p-4">
-        <div className="flex w-full flex-col items-center text-center mb-16 sm:mb-20">
+        <div className="flex w-full flex-col items-center text-center mb-8 sm:mb-20">
           <h1
-            className={`mb-1 text-8xl font-medium text-blue-700 sm:text-9xl ${fleur.className}`}
+            className={`mb-1 text-6xl font-medium text-blue-700 sm:text-9xl ${fleur.className}`}
           >
             Axiom
           </h1>
           <p
-            className={`mb-6 text-lg text-gray-600 sm:text-xl ${fleur.className}`}
+            className={`mb-4 text-base text-gray-600 sm:text-xl ${fleur.className}`}
           >
             Por estudiantes, Para estudiantes
           </p>
 
           <div
             ref={searchContainerRef}
-            className="relative w-full max-w-2xl px-4 md:px-0"
+            className="relative w-full max-w-2xl px-2 sm:px-4 md:px-0"
           >
             <div className="relative flex items-center">
               <Input
                 type="search"
                 placeholder="Buscá tu Universidad"
-                className="w-full h-14 rounded-full px-6 py-3 pr-12 text-lg font-medium shadow-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-400"
+                className="w-full h-12 sm:h-14 rounded-full px-4 sm:px-6 py-2 sm:py-3 pr-12 text-base sm:text-lg font-medium shadow-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-400"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onFocus={() => searchTerm.trim() && setIsDropdownVisible(true)}
@@ -211,10 +214,10 @@ export default function Home() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                className="absolute right-2 sm:right-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                 aria-label="Buscar"
               >
-                <SearchIcon className="h-6 w-6" />
+                <SearchIcon className="h-5 w-5 sm:h-6 sm:w-6" />
               </Button>
             </div>
 
@@ -246,6 +249,19 @@ export default function Home() {
               </div>
             )}
           </div>
+          {user?.roles?.some((r) => r.name === "admin") && (
+            <Button className="mb-6" onClick={() => setShowCreateModal(true)}>
+              Crear Universidad
+            </Button>
+          )}
+          <CreateUniversityModal
+            open={showCreateModal}
+            onOpenChange={setShowCreateModal}
+            onCreated={() => {
+              setShowCreateModal(false);
+              // Podrías recargar la lista aquí si es necesario
+            }}
+          />
         </div>
       </div>
     </div>
