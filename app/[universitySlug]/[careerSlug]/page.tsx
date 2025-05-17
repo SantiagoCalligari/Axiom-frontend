@@ -10,6 +10,7 @@ import {
 import { BackButton } from '@/components/ui/BackButton';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { SubjectList } from '@/components/lists/SubjectList';
+import CreateSubjectButton from './CreateSubjectButton';
 
 // --- Interfaces ---
 interface UniversityInfo { name: string; slug: string; }
@@ -50,7 +51,7 @@ async function getUniversityInfo(slug: string): Promise<UniversityInfo | null> {
 
 // --- Componente de Página ---
 export default async function CareerPage({ params }: { params: Promise<{ universitySlug: string, careerSlug: string }> }) {
-  const { universitySlug, careerSlug } = await params; // Manteniendo tu forma
+  const { universitySlug, careerSlug } = await params;
   const [careerData, universityInfo] = await Promise.all([
     getCareerData(universitySlug, careerSlug),
     getUniversityInfo(universitySlug)
@@ -62,9 +63,9 @@ export default async function CareerPage({ params }: { params: Promise<{ univers
 
   // --- Construir Breadcrumbs (con Inicio) ---
   const breadcrumbItems = [
-    { label: "Inicio", href: "/" }, // Enlace a la página principal
+    { label: "Inicio", href: "/" },
     { label: universityInfo.name, href: `/${universitySlug}` },
-    { label: careerData.name, href: `/${universitySlug}/${careerSlug}` }, // Item actual
+    { label: careerData.name, href: `/${universitySlug}/${careerSlug}` },
   ];
 
   return (
@@ -90,7 +91,10 @@ export default async function CareerPage({ params }: { params: Promise<{ univers
 
       {/* Sección de Materias con Búsqueda */}
       <section>
-        <h2 className="text-2xl font-semibold mb-6 border-b pb-2">Materias</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-semibold border-b pb-2">Materias</h2>
+          <CreateSubjectButton universitySlug={universitySlug} careerSlug={careerSlug} />
+        </div>
         <SubjectList
           subjects={careerData.subjects || []}
           universitySlug={universitySlug}

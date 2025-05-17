@@ -129,7 +129,7 @@ const SingleCommentComponent: React.FC<SingleCommentProps> = ({
         setIsAddingReply(false);
         return;
       }
-      const endpoint = `${apiUrl}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exam/${examId}/comment/${comment.id}/replies`;
+      const endpoint = `${apiUrl}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exam/${examId}/comment/${comment.id}`;
       try {
         const response = await fetch(endpoint, {
           method: "POST",

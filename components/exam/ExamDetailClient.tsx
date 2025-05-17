@@ -107,16 +107,16 @@ export function ExamDetailClient({
   const pdfUrl = examData.download_url;
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-8">
-      <div className="mb-6 flex flex-col sm:flex-row items-start justify-between gap-4">
-        <div className="flex-grow pr-4">
+    <div className="container mx-auto max-w-7xl px-2 sm:px-4 py-4 sm:py-8">
+      <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex-grow pr-0 sm:pr-4 min-w-0 w-full">
           <Breadcrumbs items={breadcrumbItems} />
-          <h1 className="text-2xl md:text-3xl font-bold mt-1">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mt-1 break-words">
             {examData.title || `Examen #${examData.id}`}
           </h1>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground mt-1">
+          <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 text-xs sm:text-sm text-muted-foreground mt-1">
             {examData.professor_name && (
-              <span>Prof: {examData.professor_name}</span>
+              <span className="truncate max-w-[150px] sm:max-w-none">Prof: {examData.professor_name}</span>
             )}
             {examData.semester && <span>{examData.semester}</span>}
             {examData.year && <span>({examData.year})</span>}
@@ -126,15 +126,15 @@ export function ExamDetailClient({
               </span>
             )}
             {examData.exam_type && (
-              <Badge variant="outline" className="ml-1">
+              <Badge variant="outline" className="ml-0 sm:ml-1 text-xs">
                 {examData.exam_type}
               </Badge>
             )}
             <Badge
               variant={examData.is_resolved ? "default" : "outline"}
-              className={`ml-1 ${examData.is_resolved
+              className={`ml-0 sm:ml-1 text-xs ${examData.is_resolved
                 ? "border-green-600 bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
-                : "border-red-600 bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
+                : "border-red-600 bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-300"
                 }`}
             >
               {examData.is_resolved ? (
@@ -146,56 +146,59 @@ export function ExamDetailClient({
             </Badge>
           </div>
         </div>
-        <div className="flex-shrink-0 flex items-center gap-2">
+        <div className="flex-shrink-0 flex items-center gap-2 self-end sm:self-auto">
           <Button
             variant={layoutStyle === "columns" ? "secondary" : "outline"}
             size="icon"
             onClick={() => handleLayoutStyleChange("columns")}
             title="Vista en Columnas"
+            className="h-8 w-8 sm:h-9 sm:w-9"
           >
-            <Columns className="h-4 w-4" />
+            <Columns className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
           <Button
             variant={layoutStyle === "stacked" ? "secondary" : "outline"}
             size="icon"
             onClick={() => handleLayoutStyleChange("stacked")}
             title="Vista Apilada"
+            className="h-8 w-8 sm:h-9 sm:w-9"
           >
-            <LayoutPanelTop className="h-4 w-4" />
+            <LayoutPanelTop className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
           <BackButton />
         </div>
       </div>
 
-      <Separator className="my-6" />
+      <Separator className="my-4 sm:my-6" />
 
       <div
         className={cn(
-          "gap-8",
+          "gap-4 sm:gap-8",
           layoutStyle === "columns"
             ? "grid grid-cols-1 lg:grid-cols-3"
-            : "flex flex-col space-y-8",
+            : "flex flex-col space-y-4 sm:space-y-8",
         )}
       >
         <div
           className={cn(
             layoutStyle === "columns" ? "lg:col-span-2" : "w-full",
+            "w-full"
           )}
         >
           <Card className="overflow-hidden">
-            <CardHeader>
-              <CardTitle>Vista Previa del Examen</CardTitle>
+            <CardHeader className="p-3 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">Vista Previa del Examen</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-2 sm:p-6">
               {!isClient ? (
-                <div className="w-full h-[75vh] flex items-center justify-center border rounded-md bg-muted">
-                  <RotateCw className="h-8 w-8 animate-spin text-muted-foreground" />
+                <div className="w-full h-[50vh] sm:h-[75vh] flex items-center justify-center border rounded-md bg-muted">
+                  <RotateCw className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : pdfUrl ? (
                 <iframe
                   key={pdfUrl}
                   src={pdfUrl}
-                  className="w-full h-[75vh] border rounded-md"
+                  className="w-full h-[50vh] sm:h-[75vh] border rounded-md"
                   title={`Vista previa de ${examData.title || "examen"}`}
                 >
                   <p className="p-4 text-center">
@@ -213,17 +216,17 @@ export function ExamDetailClient({
                   </p>
                 </iframe>
               ) : (
-                <p className="text-center text-muted-foreground py-10">
+                <p className="text-center text-muted-foreground py-6 sm:py-10">
                   No se pudo cargar la vista previa del PDF.
                 </p>
               )}
-              <Button asChild variant="outline" size="sm" className="mt-4 w-full">
+              <Button asChild variant="outline" size="sm" className="mt-3 sm:mt-4 w-full text-xs sm:text-sm">
                 <a
                   href={examData.download_url}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Download className="mr-2 h-4 w-4" /> Descargar PDF Original
+                  <Download className="mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Descargar PDF Original
                 </a>
               </Button>
             </CardContent>
@@ -233,9 +236,10 @@ export function ExamDetailClient({
         <div
           className={cn(
             layoutStyle === "columns" ? "lg:col-span-1" : "w-full",
+            "w-full"
           )}
         >
-          <Suspense fallback={<div className="h-64 bg-muted rounded-md animate-pulse"></div>}>
+          <Suspense fallback={<div className="h-48 sm:h-64 bg-muted rounded-md animate-pulse"></div>}>
             <CommentSection
               universitySlug={universitySlug}
               careerSlug={careerSlug}
