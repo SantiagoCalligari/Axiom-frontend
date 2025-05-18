@@ -1,3 +1,4 @@
+
 // FILE: components/auth/LoginModal.tsx
 "use client";
 
