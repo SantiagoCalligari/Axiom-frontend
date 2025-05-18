@@ -27,7 +27,8 @@ interface UniversityDetail {
 interface ApiResponse { data: UniversityDetail; }
 
 // --- Función para obtener datos ---
-export async function getUniversityData(slug: string): Promise<UniversityDetail | null> {
+// NO EXPORTAR ESTA FUNCIÓN
+async function getUniversityData(slug: string): Promise<UniversityDetail | null> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) {
     console.error("URL de la API no configurada.");
@@ -99,4 +100,3 @@ export default async function UniversityPage({ params }: { params: Promise<{ uni
     </div>
   );
 }
-

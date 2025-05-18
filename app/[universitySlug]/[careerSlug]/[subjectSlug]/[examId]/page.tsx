@@ -140,7 +140,7 @@ async function getUniversityInfo(
 export default async function ExamPageServer({
   params,
 }: {
-  params: PageParams;
+  params: Promise<PageParams>;
 }) {
   const { universitySlug, careerSlug, subjectSlug, examId } = await params;
 
@@ -173,7 +173,7 @@ export default async function ExamPageServer({
 export async function generateMetadata({
   params,
 }: {
-  params: PageParams;
+  params: Promise<PageParams>;
 }): Promise<Metadata> {
   const { universitySlug, careerSlug, subjectSlug, examId } = await params;
   const examData = await getExamData(
