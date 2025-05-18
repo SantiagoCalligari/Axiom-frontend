@@ -11,17 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Pagination,
   PaginationContent,
@@ -31,15 +22,14 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { ArrowDownUp, Check, X, RotateCw, Download, Search, SlidersHorizontal } from 'lucide-react';
+import { ArrowUp, ArrowDown, Check, X, RotateCw, Search } from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link'; // Importar Link
+import Link from 'next/link';
 
 // --- Interfaces ---
 interface Exam {
   id: number;
   title: string;
-  // slug ya no es necesario
   professor_name: string | null;
   semester: string | null;
   year: number | null;
@@ -70,6 +60,21 @@ const sortOptions = [
   { value: 'created_at', label: 'Subido' },
 ];
 
+// --- Traducción de tipos de examen ---
+function getExamTypeLabel(type: string | null) {
+  if (!type) return "";
+  switch (type.toLowerCase()) {
+    case "midterm":
+      return "Parcial";
+    case "retake":
+      return "Recuperatorio";
+    case "final":
+      return "Final";
+    default:
+      return type;
+  }
+}
+
 export function ExamList({ universitySlug, careerSlug, subjectSlug }: ExamListProps) {
   const [exams, setExams] = useState<Exam[]>([]);
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
@@ -80,11 +85,11 @@ export function ExamList({ universitySlug, careerSlug, subjectSlug }: ExamListPr
   // Estados de Filtro y Orden
   const [professorFilter, setProfessorFilter] = useState('');
   const [semesterFilter, setSemesterFilter] = useState('');
-  const [resolvedFilter, setResolvedFilter] = useState<boolean | null>(null);
+  const [resolvedFilter, setResolvedFilter] = useState<null | boolean>(null);
   const [sortBy, setSortBy] = useState('exam_date');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // --- Función Fetch (se mantiene igual) ---
+  // --- Fetch ---
   const fetchExams = useCallback(async (page = 1) => {
     setIsLoading(true);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -111,21 +116,21 @@ export function ExamList({ universitySlug, careerSlug, subjectSlug }: ExamListPr
     } finally { setIsLoading(false); }
   }, [universitySlug, careerSlug, subjectSlug, professorFilter, semesterFilter, resolvedFilter, sortBy, sortOrder]);
 
-  // --- Efecto Fetch (se mantiene igual) ---
   useEffect(() => { fetchExams(currentPage); }, [fetchExams, currentPage]);
 
-  // --- Manejadores de Cambio (se mantienen igual) ---
+  // --- Handlers ---
   const handleFilterChange = (setter: React.Dispatch<React.SetStateAction<any>>, value: any) => {
     startTransition(() => { setter(value); setCurrentPage(1); });
   };
   const handleProfessorChange = (e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange(setProfessorFilter, e.target.value);
-  const handleSemesterChange = (e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange(setSemesterFilter, e.target.value);
-  const handleResolvedChange = (checked: boolean) => {
-    const nextValue = checked ? true : (resolvedFilter === true ? null : false);
-    handleFilterChange(setResolvedFilter, nextValue);
+  const handleSemesterChange = (value: string) => handleFilterChange(setSemesterFilter, value);
+  const handleResolvedChange = (value: string) => {
+    if (value === "") handleFilterChange(setResolvedFilter, null);
+    else if (value === "resueltos") handleFilterChange(setResolvedFilter, true);
+    else handleFilterChange(setResolvedFilter, false);
   };
   const handleSortByChange = (value: string) => handleFilterChange(setSortBy, value);
-  const handleSortOrderChange = () => handleFilterChange(setSortOrder, (prev: string) => prev === 'asc' ? 'desc' : 'asc');
+  const handleSortOrderChange = () => handleFilterChange(setSortOrder, (prev: 'asc' | 'desc') => prev === 'asc' ? 'desc' : 'asc');
   const handleResetFilters = () => {
     startTransition(() => {
       setProfessorFilter(''); setSemesterFilter(''); setResolvedFilter(null);
@@ -138,7 +143,7 @@ export function ExamList({ universitySlug, careerSlug, subjectSlug }: ExamListPr
     }
   };
 
-  // --- Lógica Paginación (se mantiene igual) ---
+  // --- Paginación ---
   const paginationItems = useMemo(() => {
     if (!paginationMeta || paginationMeta.last_page <= 1) return null;
     const items: any = []; const totalPages = paginationMeta.last_page; const currentPageNum = paginationMeta.current_page;
@@ -157,44 +162,120 @@ export function ExamList({ universitySlug, careerSlug, subjectSlug }: ExamListPr
     }); return items;
   }, [paginationMeta, currentPage]);
 
-
   return (
     <div className="space-y-4" id="exam-list-section">
 
       {/* --- Toolbar de Filtros y Orden --- */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 p-4 border rounded-md bg-card text-card-foreground">
-        {/* Filtro Profesor */}
-        <div className="relative flex-grow sm:flex-grow-0 sm:w-48">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <Input id="prof-filter" placeholder="Profesor..." value={professorFilter} onChange={handleProfessorChange} className="pl-8 h-9 text-sm" />
+      <div className="w-full border rounded-lg bg-muted/40 p-4">
+        <div className="flex flex-col md:flex-row gap-4 items-end w-full">
+          {/* Profesor */}
+          <div className="flex flex-col gap-2 flex-1 min-w-0">
+            <Label htmlFor="prof-filter" className="text-xs font-medium">Profesor</Label>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                id="prof-filter"
+                placeholder="Buscar profesor..."
+                value={professorFilter}
+                onChange={handleProfessorChange}
+                className="pl-8 h-9 text-sm w-full"
+              />
+            </div>
+          </div>
+          {/* Cuatrimestre */}
+          <div className="flex flex-col gap-2 flex-1 min-w-0">
+            <Label htmlFor="sem-filter" className="text-xs font-medium">Cuatrimestre</Label>
+            <Select value={semesterFilter} onValueChange={handleSemesterChange}>
+              <SelectTrigger id="sem-filter" className="h-9 text-sm w-full">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1C">1° cuatrimestre</SelectItem>
+                <SelectItem value="2C">2° cuatrimestre</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Resuelto */}
+          <div className="flex flex-col gap-2 flex-1 min-w-0">
+            <Label htmlFor="res-filter" className="text-xs font-medium">Resuelto</Label>
+            <Select
+              value={
+                resolvedFilter === null
+                  ? ""
+                  : resolvedFilter === true
+                    ? "resueltos"
+                    : "no-resueltos"
+              }
+              onValueChange={handleResolvedChange}
+            >
+              <SelectTrigger id="res-filter" className="h-9 text-sm w-full">
+                <SelectValue
+                  placeholder="Todos"
+                  defaultValue={
+                    resolvedFilter === null
+                      ? "Todos"
+                      : resolvedFilter
+                        ? "Solo resueltos"
+                        : "Solo no resueltos"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="resueltos">Solo resueltos</SelectItem>
+                <SelectItem value="no-resueltos">Solo no resueltos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Ordenar por */}
+          <div className="flex flex-col gap-2 flex-1 min-w-0">
+            <Label htmlFor="sort-by" className="text-xs font-medium">Ordenar por</Label>
+            <div className="flex gap-2 w-full">
+              <Select value={sortBy} onValueChange={handleSortByChange}>
+                <SelectTrigger id="sort-by" className="h-9 text-sm w-full">
+                  <SelectValue placeholder="Ordenar por..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortOptions.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleSortOrderChange}
+                className="h-9 w-9 min-w-0 flex-shrink-0 border"
+                aria-label={sortOrder === 'asc' ? 'Ascendente' : 'Descendente'}
+                title={sortOrder === 'asc' ? 'Ascendente' : 'Descendente'}
+              >
+                {sortOrder === 'asc' ? (
+                  <ArrowUp className="h-4 w-4" />
+                ) : (
+                  <ArrowDown className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+          {/* Botón limpiar */}
+          <div className="flex flex-col gap-2 items-end min-w-0">
+            <Label className="invisible select-none">Limpiar</Label>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleResetFilters}
+              disabled={isLoading || isPending}
+              className="h-9 w-9 min-w-0"
+              aria-label="Limpiar filtros"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
-        {/* Filtro Semestre */}
-        <div className="relative flex-grow sm:flex-grow-0 sm:w-48">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <Input id="sem-filter" placeholder="Semestre..." value={semesterFilter} onChange={handleSemesterChange} className="pl-8 h-9 text-sm" />
-        </div>
-        {/* Ordenar Por */}
-        <div className="flex items-center gap-x-1">
-          <Select value={sortBy} onValueChange={handleSortByChange}>
-            <SelectTrigger id="sort-by" className="h-9 text-sm w-[150px]"> <SelectValue placeholder="Ordenar por..." /> </SelectTrigger>
-            <SelectContent> {sortOptions.map(opt => (<SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>))} </SelectContent>
-          </Select>
-          <Button variant="outline" size="icon" onClick={handleSortOrderChange} className="h-9 w-9 flex-shrink-0 border">
-            <ArrowDownUp className={`h-4 w-4 transition-transform ${sortOrder === 'asc' ? 'transform rotate-180' : ''}`} />
-          </Button>
-        </div>
-        {/* Filtro Resuelto */}
-        <div className="flex items-center space-x-2">
-          <Switch id="res-filter" checked={resolvedFilter === true} onCheckedChange={handleResolvedChange} />
-          <Label htmlFor="res-filter" className="text-sm cursor-pointer">Resuelto ({resolvedFilter === null ? 'Todos' : (resolvedFilter ? 'Sí' : 'No')})</Label>
-        </div>
-        {/* Botón Reset */}
-        <Button variant="ghost" size="sm" onClick={handleResetFilters} disabled={isLoading || isPending} className="text-xs ml-auto">
-          <RotateCw className="mr-1 h-3 w-3" /> Limpiar Filtros
-        </Button>
       </div>
 
-      {/* --- Tabla de Exámenes --- */}
+      {/* --- Cards de Exámenes (NO TOCAR) --- */}
       <div className="relative border rounded-md">
         {(isLoading || isPending) && (
           <div className="absolute inset-0 bg-background/60 flex items-center justify-center z-10 rounded-md backdrop-blur-sm">
@@ -212,11 +293,10 @@ export function ExamList({ universitySlug, careerSlug, subjectSlug }: ExamListPr
                 <Link
                   key={exam.id}
                   href={`/${universitySlug}/${careerSlug}/${subjectSlug}/${exam.id}`}
-                  className={`block p-3 rounded-lg border transition-colors hover:bg-accent/50 ${
-                    exam.is_resolved 
-                      ? 'border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20' 
-                      : 'border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20'
-                  }`}
+                  className={`block p-3 rounded-lg border transition-colors hover:bg-accent/50 ${exam.is_resolved
+                    ? 'border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20'
+                    : 'border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20'
+                    }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex-grow">
@@ -229,20 +309,20 @@ export function ExamList({ universitySlug, careerSlug, subjectSlug }: ExamListPr
                         )}
                         {exam.exam_type && (
                           <Badge variant="secondary" className="text-xs">
-                            {exam.exam_type}
+                            {getExamTypeLabel(exam.exam_type)}
                           </Badge>
                         )}
                         <span>
-                          {exam.exam_date 
+                          {exam.exam_date
                             ? new Date(exam.exam_date).toLocaleDateString('es-ES')
                             : `${exam.year || ''} ${exam.semester || ''}`}
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge 
+                      <Badge
                         variant={exam.is_resolved ? "default" : "outline"}
-                        className={exam.is_resolved 
+                        className={exam.is_resolved
                           ? "border-green-600 bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
                           : "border-red-600 bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
                         }
