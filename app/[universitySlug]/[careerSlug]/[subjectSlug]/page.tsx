@@ -10,6 +10,7 @@ import { BackButton } from '@/components/ui/BackButton';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { ExamList } from '@/components/lists/ExamList'; // Importar ExamList
 
+import { ExamCreateModal } from '@/components/exam/ExamCreateModal';
 interface UniversityInfo { name: string; slug: string; }
 interface CareerInfo { name: string; slug: string; }
 interface SubjectDetail {
@@ -85,6 +86,12 @@ export default async function SubjectPage({ params }: { params: Promise<{ univer
           <Breadcrumbs items={breadcrumbItems} />
           <h1 className="text-3xl md:text-4xl font-bold mt-1">{subjectData.name}</h1>
         </div>
+        <ExamCreateModal
+          universitySlug={universitySlug}
+          careerSlug={careerSlug}
+          subjectSlug={subjectSlug}
+        />
+
         <div className="flex-shrink-0">
           <BackButton />
         </div>
