@@ -167,100 +167,110 @@ export function ExamList({ universitySlug, careerSlug, subjectSlug }: ExamListPr
 
       {/* --- Toolbar de Filtros y Orden --- */}
       <div className="w-full border rounded-lg bg-muted/40 p-4">
-        <div className="flex flex-col md:flex-row gap-4 items-end w-full">
-          {/* Profesor */}
-          <div className="flex flex-col gap-2 flex-1 min-w-0">
-            <Label htmlFor="prof-filter" className="text-xs font-medium">Profesor</Label>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <Input
-                id="prof-filter"
-                placeholder="Buscar profesor..."
-                value={professorFilter}
-                onChange={handleProfessorChange}
-                className="pl-8 h-9 text-sm w-full"
-              />
-            </div>
-          </div>
-          {/* Cuatrimestre */}
-          <div className="flex flex-col gap-2 flex-1 min-w-0">
-            <Label htmlFor="sem-filter" className="text-xs font-medium">Cuatrimestre</Label>
-            <Select value={semesterFilter} onValueChange={handleSemesterChange}>
-              <SelectTrigger id="sem-filter" className="h-9 text-sm w-full">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1C">1° cuatrimestre</SelectItem>
-                <SelectItem value="2C">2° cuatrimestre</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {/* Resuelto */}
-          <div className="flex flex-col gap-2 flex-1 min-w-0">
-            <Label htmlFor="res-filter" className="text-xs font-medium">Resuelto</Label>
-            <Select
-              value={
-                resolvedFilter === null
-                  ? ""
-                  : resolvedFilter === true
-                    ? "resueltos"
-                    : "no-resueltos"
-              }
-              onValueChange={handleResolvedChange}
-            >
-              <SelectTrigger id="res-filter" className="h-9 text-sm w-full">
-                <SelectValue
-                  placeholder="Todos"
-                  defaultValue={
-                    resolvedFilter === null
-                      ? "Todos"
-                      : resolvedFilter
-                        ? "Solo resueltos"
-                        : "Solo no resueltos"
-                  }
+        <form
+          className="
+      flex flex-col gap-4
+      md:flex-row md:items-end md:gap-4
+      w-full
+    "
+          onSubmit={e => e.preventDefault()}
+        >
+          {/* Filtros principales */}
+          <div className="flex flex-col gap-4 flex-1 md:flex-row md:gap-4">
+            {/* Profesor */}
+            <div className="flex flex-col gap-2 flex-1 min-w-0">
+              <Label htmlFor="prof-filter" className="text-xs font-medium">Profesor</Label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  id="prof-filter"
+                  placeholder="Buscar profesor..."
+                  value={professorFilter}
+                  onChange={handleProfessorChange}
+                  className="pl-8 h-9 text-sm w-full"
                 />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="resueltos">Solo resueltos</SelectItem>
-                <SelectItem value="no-resueltos">Solo no resueltos</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {/* Ordenar por */}
-          <div className="flex flex-col gap-2 flex-1 min-w-0">
-            <Label htmlFor="sort-by" className="text-xs font-medium">Ordenar por</Label>
-            <div className="flex gap-2 w-full">
-              <Select value={sortBy} onValueChange={handleSortByChange}>
-                <SelectTrigger id="sort-by" className="h-9 text-sm w-full">
-                  <SelectValue placeholder="Ordenar por..." />
+              </div>
+            </div>
+            {/* Cuatrimestre */}
+            <div className="flex flex-col gap-2 flex-1 min-w-0">
+              <Label htmlFor="sem-filter" className="text-xs font-medium">Cuatrimestre</Label>
+              <Select value={semesterFilter} onValueChange={handleSemesterChange}>
+                <SelectTrigger id="sem-filter" className="h-9 text-sm w-full">
+                  <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  {sortOptions.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="1C">1° cuatrimestre</SelectItem>
+                  <SelectItem value="2C">2° cuatrimestre</SelectItem>
                 </SelectContent>
               </Select>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleSortOrderChange}
-                className="h-9 w-9 min-w-0 flex-shrink-0 border"
-                aria-label={sortOrder === 'asc' ? 'Ascendente' : 'Descendente'}
-                title={sortOrder === 'asc' ? 'Ascendente' : 'Descendente'}
+            </div>
+            {/* Resuelto */}
+            <div className="flex flex-col gap-2 flex-1 min-w-0">
+              <Label htmlFor="res-filter" className="text-xs font-medium">Resuelto</Label>
+              <Select
+                value={
+                  resolvedFilter === null
+                    ? ""
+                    : resolvedFilter === true
+                      ? "resueltos"
+                      : "no-resueltos"
+                }
+                onValueChange={handleResolvedChange}
               >
-                {sortOrder === 'asc' ? (
-                  <ArrowUp className="h-4 w-4" />
-                ) : (
-                  <ArrowDown className="h-4 w-4" />
-                )}
-              </Button>
+                <SelectTrigger id="res-filter" className="h-9 text-sm w-full">
+                  <SelectValue
+                    placeholder="Todos"
+                    defaultValue={
+                      resolvedFilter === null
+                        ? "Todos"
+                        : resolvedFilter
+                          ? "Solo resueltos"
+                          : "Solo no resueltos"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="resueltos">Solo resueltos</SelectItem>
+                  <SelectItem value="no-resueltos">Solo no resueltos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Ordenar por */}
+            <div className="flex flex-col gap-2 flex-1 min-w-0">
+              <Label htmlFor="sort-by" className="text-xs font-medium">Ordenar por</Label>
+              <div className="flex gap-2 w-full">
+                <Select value={sortBy} onValueChange={handleSortByChange}>
+                  <SelectTrigger id="sort-by" className="h-9 text-sm w-full">
+                    <SelectValue placeholder="Ordenar por..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sortOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
-          {/* Botón limpiar */}
-          <div className="flex flex-col gap-2 items-end min-w-0">
-            <Label className="invisible select-none">Limpiar</Label>
+          {/* Flecha y X, siempre a la derecha */}
+          <div className="flex flex-row gap-2 justify-end items-end md:flex-col md:justify-end md:items-end">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleSortOrderChange}
+              className="h-9 w-9 min-w-0 flex-shrink-0 border"
+              aria-label={sortOrder === 'asc' ? 'Ascendente' : 'Descendente'}
+              title={sortOrder === 'asc' ? 'Ascendente' : 'Descendente'}
+              type="button"
+            >
+              {sortOrder === 'asc' ? (
+                <ArrowUp className="h-4 w-4" />
+              ) : (
+                <ArrowDown className="h-4 w-4" />
+              )}
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -268,11 +278,12 @@ export function ExamList({ universitySlug, careerSlug, subjectSlug }: ExamListPr
               disabled={isLoading || isPending}
               className="h-9 w-9 min-w-0"
               aria-label="Limpiar filtros"
+              type="button"
             >
               <X className="h-5 w-5" />
             </Button>
           </div>
-        </div>
+        </form>
       </div>
 
       {/* --- Cards de Exámenes (NO TOCAR) --- */}
