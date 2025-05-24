@@ -65,6 +65,20 @@ interface ExamDetailClientProps {
 
 type LayoutStyle = "columns" | "stacked";
 
+function getExamTypeLabel(type: string | null) {
+  if (!type) return "";
+  switch (type.toLowerCase()) {
+    case "midterm":
+      return "Parcial";
+    case "retake":
+      return "Recuperatorio";
+    case "final":
+      return "Final";
+    default:
+      return type;
+  }
+}
+
 export function ExamDetailClient({
   examData,
   subjectInfo,
@@ -127,7 +141,7 @@ export function ExamDetailClient({
             )}
             {examData.exam_type && (
               <Badge variant="outline" className="ml-0 sm:ml-1 text-xs">
-                {examData.exam_type}
+                {getExamTypeLabel(examData.exam_type)}
               </Badge>
             )}
             <Badge
