@@ -1,10 +1,8 @@
-// FILE: components/exam/CommentSection.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -15,17 +13,20 @@ import {
   ChevronDown,
   ChevronRight,
   MessageSquareText,
+  X,
 } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-
-// --- Import Markdown and Math Plugins ---
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkMath from "remark-math";
 import rehypeKaTeX from "rehype-katex";
-// --- End Imports ---
+import "katex/dist/katex.min.css";
+import ReactMde from "react-mde";
+import "react-mde/lib/styles/css/react-mde-all.css";
+import { useDropzone } from "react-dropzone";
+import clsx from "clsx";
 
 // --- Interfaces ---
 interface CommentUser {
@@ -54,7 +55,6 @@ interface Comment {
   user: CommentUser;
   replies: Comment[];
   attachments: Attachment[];
-  // UI state, not from API
   showReplyForm?: boolean;
   userVote?: "up" | "down" | null;
   isFolded?: boolean;
@@ -82,6 +82,115 @@ const getInitials = (name: string = ""): string => {
     .toUpperCase();
 };
 
+interface FileCardProps {
+  file: File;
+  onRemove: () => void;
+}
+function FileCard({ file, onRemove }: FileCardProps) {
+  return (
+    <div className="flex items-center gap-2 bg-muted border rounded px-3 py-2 shadow-sm">
+      <Paperclip className="h-4 w-4 text-muted-foreground" />
+      <span className="truncate max-w-[120px] text-xs">{file.name}</span>
+      <Button
+        type="button"
+        size="icon"
+        variant="ghost"
+        className="h-6 w-6"
+        onClick={onRemove}
+        aria-label="Quitar archivo"
+      >
+        <X className="h-3 w-3" />
+      </Button>
+    </div>
+  );
+}
+
+// --- Custom Editor Component ---
+function ShadcnMDE({
+  value,
+  onChange,
+  selectedTab,
+  onTabChange,
+  minHeight = 80,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  selectedTab: "write" | "preview";
+  onTabChange: (tab: "write" | "preview") => void;
+  minHeight?: number;
+  placeholder?: string;
+}) {
+  return (
+    <div>
+      {/* Custom Tabs */}
+      <div className="mb-1 flex gap-1">
+        <button
+          type="button"
+          className={clsx(
+            "px-3 py-1 rounded-t-md text-xs font-medium border-b-2 transition",
+            selectedTab === "write"
+              ? "border-primary bg-background text-primary"
+              : "border-transparent bg-muted text-muted-foreground hover:text-foreground"
+          )}
+          onClick={() => onTabChange("write")}
+        >
+          Escribir
+        </button>
+        <button
+          type="button"
+          className={clsx(
+            "px-3 py-1 rounded-t-md text-xs font-medium border-b-2 transition",
+            selectedTab === "preview"
+              ? "border-primary bg-background text-primary"
+              : "border-transparent bg-muted text-muted-foreground hover:text-foreground"
+          )}
+          onClick={() => onTabChange("preview")}
+        >
+          Vista previa
+        </button>
+      </div>
+      {/* Editor */}
+      <div className="[&_.mde-tabs]:hidden [&_.mde-header]:hidden">
+        <ReactMde
+          value={value}
+          onChange={onChange}
+          selectedTab={selectedTab}
+          onTabChange={onTabChange}
+          minEditorHeight={minHeight}
+          minPreviewHeight={minHeight}
+          generateMarkdownPreview={async (markdown) => (
+            <div className="bg-muted border rounded-md p-3 min-h-[80px] prose prose-sm dark:prose-invert text-foreground">
+              <ReactMarkdown
+                remarkPlugins={[remarkMath]}
+                rehypePlugins={[rehypeSanitize, rehypeKaTeX]}
+              >
+                {markdown}
+              </ReactMarkdown>
+            </div>
+          )}
+          childProps={{
+            writeButton: { tabIndex: -1 },
+            previewButton: { tabIndex: -1 },
+          }}
+          classes={{
+            textArea: "bg-background border rounded-md border-input focus:outline-none focus:ring-2 focus:ring-primary/30 px-3 py-2 min-h-[80px] text-sm font-mono",
+            toolbar: "flex gap-1 bg-muted border-b rounded-t-md px-2 py-1",
+            toolbarButton: "rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground focus:ring-2 focus:ring-primary/30 focus:outline-none transition",
+            toolbarButtonSelected: "bg-accent text-foreground",
+            preview: "bg-muted border rounded-md p-3 min-h-[80px] prose prose-sm dark:prose-invert text-foreground",
+          }}
+          placeholder={placeholder}
+        />
+      </div>
+      <div className="text-xs text-muted-foreground mt-1">
+        Soporta <b>Markdown</b> y <b>LaTeX</b> (<span className="font-mono">{"$a^2 + b^2 = c^2$"}</span>).
+        <span className="ml-2">Usá los botones para listas, negrita, etc.</span>
+      </div>
+    </div>
+  );
+}
+
 interface SingleCommentProps {
   comment: Comment;
   universitySlug: string;
@@ -103,7 +212,7 @@ const SingleCommentComponent: React.FC<SingleCommentProps> = ({
   careerSlug,
   subjectSlug,
   examId,
-  onCommentAdded, // Use the prop here
+  onCommentAdded,
   onVote,
   onToggleFold,
 }) => {
@@ -112,14 +221,33 @@ const SingleCommentComponent: React.FC<SingleCommentProps> = ({
     comment.showReplyForm || false,
   );
   const [replyContent, setReplyContent] = useState("");
+  const [replyTab, setReplyTab] = useState<"write" | "preview">("write");
   const [isAddingReply, setIsAddingReply] = useState(false);
   const [userVote, setUserVote] = useState<"up" | "down" | null>(
     comment.userVote || null,
   );
+  const [replyFiles, setReplyFiles] = useState<File[]>([]);
+
+  // Dropzone for reply
+  const onDropReply = useCallback(
+    (acceptedFiles: File[]) => {
+      setReplyFiles((prev) => [...prev, ...acceptedFiles]);
+    },
+    [setReplyFiles],
+  );
+  const { getRootProps, getInputProps, open: openReplyFileDialog } = useDropzone({
+    onDrop: onDropReply,
+    noClick: true,
+    noKeyboard: true,
+  });
+
+  const handleRemoveReplyFile = (index: number) => {
+    setReplyFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleReplySubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!replyContent.trim()) return;
+    if (!replyContent.trim() && replyFiles.length === 0) return;
 
     await verifyTokenAndExecute(async () => {
       setIsAddingReply(true);
@@ -129,16 +257,23 @@ const SingleCommentComponent: React.FC<SingleCommentProps> = ({
         setIsAddingReply(false);
         return;
       }
-      const endpoint = `${apiUrl}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exam/${examId}/comment/${comment.id}`;
+      // Use the comment creation endpoint (no comment.id in the URL)
+      const endpoint = `${apiUrl}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exam/${examId}/comments`;
       try {
+        const formData = new FormData();
+        formData.append("content", replyContent);
+        formData.append("parent_id", comment.id); // Add parent_id for reply
+        replyFiles.forEach((file) => {
+          formData.append("attachments[]", file);
+        });
+
         const response = await fetch(endpoint, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
             ...(token && { Authorization: `Bearer ${token}` }),
+            Accept: "application/json",
           },
-          body: JSON.stringify({ content: replyContent }),
+          body: formData,
         });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -149,8 +284,9 @@ const SingleCommentComponent: React.FC<SingleCommentProps> = ({
         }
         const result = await response.json();
         if (result.data) {
-          onCommentAdded(result.data, comment.id); // Use the prop here
+          onCommentAdded(result.data, comment.id);
           setReplyContent("");
+          setReplyFiles([]);
           setShowReplyForm(false);
           toast.success("Respuesta añadida.");
         } else {
@@ -223,22 +359,34 @@ const SingleCommentComponent: React.FC<SingleCommentProps> = ({
               {comment.attachments && comment.attachments.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                   {comment.attachments.map((attachment) => (
-                    <Button
+                    <Card
                       key={attachment.id}
-                      variant="outline"
-                      size="sm"
-                      asChild
+                      className="flex items-center gap-2 px-3 py-2 bg-muted border rounded shadow-sm"
                     >
+                      <Button
+                        asChild
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        title="Descargar archivo"
+                      >
+                        <a
+                          href={attachment.download_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Paperclip className="h-4 w-4" />
+                        </a>
+                      </Button>
                       <a
                         href={attachment.download_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-x-1 text-xs"
+                        className="truncate max-w-[120px] text-xs hover:underline"
                       >
-                        <Paperclip className="h-3 w-3" />
                         {attachment.original_file_name}
                       </a>
-                    </Button>
+                    </Card>
                   ))}
                 </div>
               )}
@@ -282,18 +430,48 @@ const SingleCommentComponent: React.FC<SingleCommentProps> = ({
                   onSubmit={handleReplySubmit}
                   className="mt-2.5 space-y-2 pl-5 border-l ml-1"
                 >
-                  <Textarea
-                    placeholder={`Responder a ${comment.user.name}... Puedes usar Markdown y \$LaTeX\$. Ejemplo: $(a^2 + b^2 = c^2)$ para inline, o $$ \\int_0^1 x^2 dx $$ para display.`}
+                  <ShadcnMDE
                     value={replyContent}
-                    onChange={(e) => setReplyContent(e.target.value)}
-                    rows={2}
-                    disabled={isAddingReply}
-                    className="text-sm"
+                    onChange={setReplyContent}
+                    selectedTab={replyTab}
+                    onTabChange={setReplyTab}
+                    minHeight={60}
+                    placeholder={`Responder a ${comment.user.name}...`}
                   />
+                  <div {...getRootProps()} className="flex flex-col gap-2">
+                    <input {...getInputProps()} />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={openReplyFileDialog}
+                        tabIndex={-1}
+                        aria-label="Adjuntar archivo"
+                      >
+                        <Paperclip className="h-4 w-4" />
+                      </Button>
+                      <span className="text-xs text-muted-foreground">
+                        Adjuntar archivos (arrastrar o click en el clip)
+                      </span>
+                    </div>
+                    {replyFiles.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {replyFiles.map((file, idx) => (
+                          <FileCard
+                            key={idx}
+                            file={file}
+                            onRemove={() => handleRemoveReplyFile(idx)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <Button
                     type="submit"
                     size="sm"
-                    disabled={isAddingReply || !replyContent.trim()}
+                    disabled={isAddingReply || (!replyContent.trim() && replyFiles.length === 0)}
                   >
                     {isAddingReply ? "Enviando..." : "Enviar Respuesta"}
                   </Button>
@@ -310,7 +488,7 @@ const SingleCommentComponent: React.FC<SingleCommentProps> = ({
                       careerSlug={careerSlug}
                       subjectSlug={subjectSlug}
                       examId={examId}
-                      onCommentAdded={onCommentAdded} // Pass the prop down
+                      onCommentAdded={onCommentAdded}
                       onVote={onVote}
                       onToggleFold={onToggleFold}
                     />
@@ -335,8 +513,27 @@ export function CommentSection({
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newCommentContent, setNewCommentContent] = useState("");
+  const [commentTab, setCommentTab] = useState<"write" | "preview">("write");
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [commentFiles, setCommentFiles] = useState<File[]>([]);
+
+  // Dropzone for main comment
+  const onDropComment = useCallback(
+    (acceptedFiles: File[]) => {
+      setCommentFiles((prev) => [...prev, ...acceptedFiles]);
+    },
+    [setCommentFiles],
+  );
+  const { getRootProps, getInputProps, open: openCommentFileDialog } = useDropzone({
+    onDrop: onDropComment,
+    noClick: true,
+    noKeyboard: true,
+  });
+
+  const handleRemoveCommentFile = (index: number) => {
+    setCommentFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const fetchComments = useCallback(async () => {
     setIsLoading(true);
@@ -452,7 +649,7 @@ export function CommentSection({
 
   const handleNewCommentSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!newCommentContent.trim()) return;
+    if (!newCommentContent.trim() && commentFiles.length === 0) return;
 
     await verifyTokenAndExecute(async () => {
       setIsAddingComment(true);
@@ -464,14 +661,19 @@ export function CommentSection({
       }
       const endpoint = `${apiUrl}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exam/${examId}/comments`;
       try {
+        const formData = new FormData();
+        formData.append("content", newCommentContent);
+        commentFiles.forEach((file) => {
+          formData.append("attachments[]", file);
+        });
+
         const response = await fetch(endpoint, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
             Accept: "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ content: newCommentContent }),
+          body: formData,
         });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -484,6 +686,7 @@ export function CommentSection({
         if (result.data) {
           handleCommentAdded(result.data, null);
           setNewCommentContent("");
+          setCommentFiles([]);
           toast.success("Comentario añadido.");
         } else {
           throw new Error("Respuesta de API inesperada al añadir comentario.");
@@ -554,21 +757,18 @@ export function CommentSection({
     const updateRecursive = (existingComments: Comment[]): Comment[] => {
       return existingComments.map((c) => {
         if (c.id === updatedComment.id) {
-          // Merge updated data, but preserve local UI state like isFolded
           return {
             ...c,
             ...updatedComment,
             userVote: c.userVote,
             isFolded: c.isFolded,
-            // Ensure replies preserve their folded state if they exist in updatedComment
             replies: updatedComment.replies?.map(updatedReply => {
               const existingReply = c.replies?.find(r => r.id === updatedReply.id);
               return { ...updatedReply, isFolded: existingReply?.isFolded ?? false };
-            }) || c.replies // Fallback to existing replies if API doesn't return them
+            }) || c.replies
           };
         }
         if (c.replies && c.replies.length > 0) {
-          // Recursively update replies, preserving their state
           return { ...c, replies: updateRecursive(c.replies) };
         }
         return c;
@@ -576,7 +776,6 @@ export function CommentSection({
     };
     setComments((prevComments) => updateRecursive(prevComments));
   };
-
 
   if (isLoading && comments.length === 0) {
     return (
@@ -615,20 +814,52 @@ export function CommentSection({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Textarea
-              placeholder="Escribe tu comentario aquí... Puedes usar Markdown y \$LaTeX\$. Ejemplo: `$(a^2 + b^2 = c^2)$` para inline, o `$$ \int_0^1 x^2 dx $$` para display."
-              rows={4}
-              value={newCommentContent}
-              onChange={(e) => setNewCommentContent(e.target.value)}
-              disabled={isAddingComment}
-            />
-            {/* TODO: Implementar adjuntos */}
-            <Button
-              onClick={handleNewCommentSubmit}
-              disabled={isAddingComment || !newCommentContent.trim()}
-            >
-              {isAddingComment ? "Publicando..." : "Publicar Comentario"}
-            </Button>
+            <form onSubmit={handleNewCommentSubmit} className="space-y-3">
+              <ShadcnMDE
+                value={newCommentContent}
+                onChange={setNewCommentContent}
+                selectedTab={commentTab}
+                onTabChange={setCommentTab}
+                minHeight={80}
+                placeholder="Escribe tu comentario aquí"
+              />
+              <div {...getRootProps()} className="flex flex-col gap-2">
+                <input {...getInputProps()} />
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={openCommentFileDialog}
+                    tabIndex={-1}
+                    aria-label="Adjuntar archivo"
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    Adjuntar archivos (arrastrar o click en el clip)
+                  </span>
+                </div>
+                {commentFiles.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {commentFiles.map((file, idx) => (
+                      <FileCard
+                        key={idx}
+                        file={file}
+                        onRemove={() => handleRemoveCommentFile(idx)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+              <Button
+                type="submit"
+                disabled={isAddingComment || (!newCommentContent.trim() && commentFiles.length === 0)}
+              >
+                {isAddingComment ? "Publicando..." : "Publicar Comentario"}
+              </Button>
+            </form>
           </CardContent>
         </Card>
       ) : (
@@ -666,7 +897,7 @@ export function CommentSection({
             careerSlug={careerSlug}
             subjectSlug={subjectSlug}
             examId={examId}
-            onCommentAdded={handleCommentAdded} // Pass the function reference
+            onCommentAdded={handleCommentAdded}
             onVote={handleVote}
             onToggleFold={handleToggleFold}
           />
