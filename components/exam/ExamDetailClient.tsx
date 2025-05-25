@@ -1,4 +1,3 @@
-// FILE: components/exam/ExamDetailClient.tsx
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
@@ -20,9 +19,17 @@ import {
   RotateCw,
   Columns,
   LayoutPanelTop,
+  FileText,
+  FileDown,
+  BookOpen,
 } from "lucide-react";
 import { CommentSection } from "@/components/comments/CommentSection";
 import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKaTeX from "rehype-katex";
+import rehypeSanitize from "rehype-sanitize";
+import "katex/dist/katex.min.css";
 
 // --- Interfaces (Props received from Server Component) ---
 interface UniversityInfo {
@@ -39,6 +46,7 @@ interface SubjectInfo {
 }
 interface ExamDetail {
   id: number;
+  user_id: number;
   title: string;
   professor_name: string | null;
   semester: string | null;
@@ -51,6 +59,10 @@ interface ExamDetail {
   uploader?: { name: string };
   created_at: string;
   file_path: string;
+  ocr_text?: string | null;
+  // Si tienes resolución, puedes agregarla aquí:
+  resolution_markdown?: string | null;
+  resolution_download_url?: string | null;
 }
 
 interface ExamDetailClientProps {
@@ -64,6 +76,7 @@ interface ExamDetailClientProps {
 }
 
 type LayoutStyle = "columns" | "stacked";
+type TabType = "pdf" | "ocr" | "resolution";
 
 function getExamTypeLabel(type: string | null) {
   if (!type) return "";
@@ -90,6 +103,9 @@ export function ExamDetailClient({
 }: ExamDetailClientProps) {
   const [isClient, setIsClient] = useState(false);
   const [layoutStyle, setLayoutStyle] = useState<LayoutStyle>("columns");
+  const [tab, setTab] = useState<TabType>(
+    examData.ocr_text ? "ocr" : "pdf"
+  );
 
   useEffect(() => {
     setIsClient(true);
@@ -118,7 +134,37 @@ export function ExamDetailClient({
     },
   ];
 
-  const pdfUrl = examData.download_url;
+  // --- Descarga OCR como archivo .md ---
+  const handleDownloadOCR = () => {
+    if (!examData.ocr_text) return;
+    const blob = new Blob([examData.ocr_text], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${examData.title || "ocr-examen"}.md`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+  };
+
+  // --- Descarga resolución (si existe) ---
+  const handleDownloadResolution = () => {
+    if (!examData.resolution_markdown) return;
+    const blob = new Blob([examData.resolution_markdown], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${examData.title || "resolucion-examen"}.md`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+  };
 
   return (
     <div className="container mx-auto max-w-7xl px-2 sm:px-4 py-4 sm:py-8">
@@ -201,48 +247,161 @@ export function ExamDetailClient({
         >
           <Card className="overflow-hidden">
             <CardHeader className="p-3 sm:p-6">
-              <CardTitle className="text-base sm:text-lg">Vista Previa del Examen</CardTitle>
+              <CardTitle className="text-base sm:text-lg">
+                {examData.ocr_text ? "Vista OCR / PDF" : "Vista Previa del Examen"}
+              </CardTitle>
+              {/* Tabs */}
+              <div className="flex gap-2 mt-2">
+                {examData.ocr_text && (
+                  <Button
+                    variant={tab === "ocr" ? "secondary" : "outline"}
+                    size="sm"
+                    onClick={() => setTab("ocr")}
+                  >
+                    <FileText className="h-4 w-4 mr-1" />
+                    OCR
+                  </Button>
+                )}
+                <Button
+                  variant={tab === "pdf" ? "secondary" : "outline"}
+                  size="sm"
+                  onClick={() => setTab("pdf")}
+                >
+                  <FileDown className="h-4 w-4 mr-1" />
+                  PDF
+                </Button>
+                {examData.is_resolved && (
+                  <Button
+                    variant={tab === "resolution" ? "secondary" : "outline"}
+                    size="sm"
+                    onClick={() => setTab("resolution")}
+                  >
+                    <BookOpen className="h-4 w-4 mr-1" />
+                    Resolución
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="p-2 sm:p-6">
-              {!isClient ? (
-                <div className="w-full h-[50vh] sm:h-[75vh] flex items-center justify-center border rounded-md bg-muted">
-                  <RotateCw className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-muted-foreground" />
+              {/* --- OCR TAB --- */}
+              {tab === "ocr" && examData.ocr_text && (
+                <div>
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-foreground whitespace-pre-wrap break-words border rounded-md p-4 bg-muted">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkMath]}
+                      rehypePlugins={[rehypeSanitize, rehypeKaTeX]}
+                    >
+                      {examData.ocr_text}
+                    </ReactMarkdown>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadOCR}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Descargar OCR (.md)
+                    </Button>
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                    >
+                      <a
+                        href={examData.download_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Descargar PDF Original
+                      </a>
+                    </Button>
+                  </div>
                 </div>
-              ) : pdfUrl ? (
-                <iframe
-                  key={pdfUrl}
-                  src={pdfUrl}
-                  className="w-full h-[50vh] sm:h-[75vh] border rounded-md"
-                  title={`Vista previa de ${examData.title || "examen"}`}
-                >
-                  <p className="p-4 text-center">
-                    Tu navegador no soporta la vista previa integrada de PDF.
-                    Puedes{" "}
+              )}
+
+              {/* --- PDF TAB --- */}
+              {tab === "pdf" && (
+                <div>
+                  {!isClient ? (
+                    <div className="w-full h-[50vh] sm:h-[75vh] flex items-center justify-center border rounded-md bg-muted">
+                      <RotateCw className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : examData.download_url ? (
+                    <iframe
+                      key={examData.download_url}
+                      src={examData.download_url}
+                      className="w-full h-[50vh] sm:h-[75vh] border rounded-md"
+                      title={`Vista previa de ${examData.title || "examen"}`}
+                    >
+                      <p className="p-4 text-center">
+                        Tu navegador no soporta la vista previa integrada de PDF.
+                        Puedes{" "}
+                        <a
+                          href={examData.download_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:text-primary"
+                        >
+                          descargar el archivo aquí
+                        </a>{" "}
+                        para verlo.
+                      </p>
+                    </iframe>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-6 sm:py-10">
+                      No se pudo cargar la vista previa del PDF.
+                    </p>
+                  )}
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 sm:mt-4 w-full text-xs sm:text-sm"
+                  >
                     <a
-                      href={pdfUrl}
+                      href={examData.download_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="underline hover:text-primary"
                     >
-                      descargar el archivo aquí
-                    </a>{" "}
-                    para verlo.
-                  </p>
-                </iframe>
-              ) : (
-                <p className="text-center text-muted-foreground py-6 sm:py-10">
-                  No se pudo cargar la vista previa del PDF.
-                </p>
+                      <Download className="mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Descargar PDF Original
+                    </a>
+                  </Button>
+                </div>
               )}
-              <Button asChild variant="outline" size="sm" className="mt-3 sm:mt-4 w-full text-xs sm:text-sm">
-                <a
-                  href={examData.download_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Download className="mr-2 h-3 w-3 sm:h-4 sm:w-4" /> Descargar PDF Original
-                </a>
-              </Button>
+
+              {/* --- RESOLUCIÓN TAB --- */}
+              {tab === "resolution" && examData.is_resolved && (
+                <div>
+                  {examData.resolution_markdown ? (
+                    <>
+                      <div className="prose prose-sm dark:prose-invert max-w-none text-foreground whitespace-pre-wrap break-words border rounded-md p-4 bg-muted">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkMath]}
+                          rehypePlugins={[rehypeSanitize, rehypeKaTeX]}
+                        >
+                          {examData.resolution_markdown}
+                        </ReactMarkdown>
+                      </div>
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleDownloadResolution}
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          Descargar Resolución (.md)
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground py-6 sm:py-10">
+                      No hay resolución cargada para este examen.
+                    </p>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -266,4 +425,3 @@ export function ExamDetailClient({
     </div>
   );
 }
-
