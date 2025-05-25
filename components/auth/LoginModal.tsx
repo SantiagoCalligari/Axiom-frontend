@@ -1,4 +1,3 @@
-
 // FILE: components/auth/LoginModal.tsx
 "use client";
 
@@ -11,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  // DialogTrigger, // No longer needed if controlled by context
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +19,7 @@ import { toast } from "sonner";
 interface LoginResponse {
   access_token: string;
   token_type: string;
-  expires_at: string; // Or Date
+  expires_at: string;
 }
 interface ErrorResponse {
   message: string;
@@ -37,7 +35,7 @@ export function LoginModal() {
   } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false); // Local submitting state
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     // Reset form if modal is closed externally
@@ -92,9 +90,7 @@ export function LoginModal() {
       }
 
       const loginData = result as LoginResponse;
-      await login(loginData.access_token); // AuthContext handles success toast & closing modal
-      // setEmail(""); // Reset by useEffect on isLoginModalOpen change
-      // setPassword("");
+      await login(loginData.access_token);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Ocurrió un error inesperado.";
@@ -114,17 +110,9 @@ export function LoginModal() {
     }
   };
 
-  // Controlled by AuthContext
-  if (!isLoginModalOpen) {
-    return null;
-  }
-
+  // SIEMPRE renderiza el modal, solo controlá su visibilidad con open
   return (
     <Dialog open={isLoginModalOpen} onOpenChange={closeLoginModal}>
-      {/* DialogTrigger is removed as this modal is controlled by AuthContext */}
-      {/* <DialogTrigger asChild>
-        <Button variant="outline">Entrar</Button>
-      </DialogTrigger> */}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Ingresar</DialogTitle>
@@ -187,7 +175,6 @@ export function LoginModal() {
           onClick={handleGoogleLoginClick}
           disabled={isSubmitting || isAuthLoading}
         >
-          {/* Consider adding a Google icon here */}
           Ingresar con Google
         </Button>
       </DialogContent>

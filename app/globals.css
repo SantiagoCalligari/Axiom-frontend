@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "katex/dist/katex.min.css"; /* Add this line */
+/* Oculta los tabs nativos de react-mde */
+.mde-tabs{
+  display: none !important;
+}
 
 
 @custom-variant dark (&:is(.dark *));
