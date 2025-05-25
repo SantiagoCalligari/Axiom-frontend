@@ -21,7 +21,7 @@ import {
   Columns,
   LayoutPanelTop,
 } from "lucide-react";
-import { CommentSection } from "@/components/exam/CommentSection";
+import { CommentSection } from "@/components/comments/CommentSection";
 import { cn } from "@/lib/utils";
 
 // --- Interfaces (Props received from Server Component) ---
