@@ -257,12 +257,10 @@ const SingleCommentComponent: React.FC<SingleCommentProps> = ({
         setIsAddingReply(false);
         return;
       }
-      // Use the comment creation endpoint (no comment.id in the URL)
-      const endpoint = `${apiUrl}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exam/${examId}/comments`;
+      const endpoint = `${apiUrl}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exam/${examId}/comment/${comment.id}`;
       try {
         const formData = new FormData();
         formData.append("content", replyContent);
-        formData.append("parent_id", comment.id); // Add parent_id for reply
         replyFiles.forEach((file) => {
           formData.append("attachments[]", file);
         });
