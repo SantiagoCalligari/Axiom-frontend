@@ -1,8 +1,7 @@
 // components/comments/CommentSection.tsx
-
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,8 +13,7 @@ import { ShadcnMDE } from "./ShadcnMDE";
 import { SingleComment } from "./SingleComment";
 import { Comment, PaginatedCommentsResponse } from "./types";
 
-// ... (todo el código del componente, igual que antes)
-// Puedes copiar y pegar el cuerpo del componente desde tu archivo original.// --- Interfaces ---
+// --- Interfaces ---
 interface CommentUser {
   id: number;
   name: string;
@@ -34,6 +32,7 @@ interface CommentSectionProps {
   careerSlug: string;
   subjectSlug: string;
   examId: string;
+  isResolutionComments?: boolean; // NEW
 }
 
 const getInitials = (name: string = ""): string => {
@@ -50,8 +49,14 @@ export function CommentSection({
   careerSlug,
   subjectSlug,
   examId,
+  isResolutionComments = false,
 }: CommentSectionProps) {
   const { token, user, isAuthenticated, verifyTokenAndExecute } = useAuth();
+
+  // --- Caching for both comment types ---
+  const examCommentsCache = useRef<Comment[] | null>(null);
+  const resolutionCommentsCache = useRef<Comment[] | null>(null);
+
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newCommentContent, setNewCommentContent] = useState("");
@@ -72,7 +77,6 @@ export function CommentSection({
     noClick: true,
     noKeyboard: true,
   });
-  // Dentro de CommentSection
 
   // Eliminar comentario
   const handleCommentDeleted = (commentId: number) => {
@@ -84,6 +88,16 @@ export function CommentSection({
           replies: c.replies ? removeRecursive(c.replies) : [],
         }));
     setComments((prev) => removeRecursive(prev));
+    // Update cache
+    if (isResolutionComments) {
+      resolutionCommentsCache.current = removeRecursive(
+        resolutionCommentsCache.current || []
+      );
+    } else {
+      examCommentsCache.current = removeRecursive(
+        examCommentsCache.current || []
+      );
+    }
   };
 
   // Actualizar comentario editado
@@ -95,22 +109,49 @@ export function CommentSection({
           : { ...c, replies: updateRecursive(c.replies || []) }
       );
     setComments((prev) => updateRecursive(prev));
+    // Update cache
+    if (isResolutionComments) {
+      resolutionCommentsCache.current = updateRecursive(
+        resolutionCommentsCache.current || []
+      );
+    } else {
+      examCommentsCache.current = updateRecursive(
+        examCommentsCache.current || []
+      );
+    }
   };
 
   const handleRemoveCommentFile = (index: number) => {
     setCommentFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // --- Fetch comments, with cache ---
   const fetchComments = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+
+    // Use cache if available
+    if (isResolutionComments && resolutionCommentsCache.current) {
+      setComments(resolutionCommentsCache.current);
+      setIsLoading(false);
+      return;
+    }
+    if (!isResolutionComments && examCommentsCache.current) {
+      setComments(examCommentsCache.current);
+      setIsLoading(false);
+      return;
+    }
+
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!apiUrl) {
       toast.error("URL API no configurada.");
       setIsLoading(false);
       return;
     }
-    const endpoint = `${apiUrl}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exam/${examId}/comments`;
+    let endpoint = `${apiUrl}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exam/${examId}/comments`;
+    if (isResolutionComments) {
+      endpoint += "?resolution=true";
+    }
     try {
       const response = await fetch(endpoint, {
         headers: { Accept: "application/json" },
@@ -130,6 +171,12 @@ export function CommentSection({
         }),
       );
       setComments(commentsWithFoldState);
+      // Save to cache
+      if (isResolutionComments) {
+        resolutionCommentsCache.current = commentsWithFoldState;
+      } else {
+        examCommentsCache.current = commentsWithFoldState;
+      }
     } catch (error) {
       console.error("Error fetching comments:", error);
       const message =
@@ -142,8 +189,15 @@ export function CommentSection({
     } finally {
       setIsLoading(false);
     }
-  }, [universitySlug, careerSlug, subjectSlug, examId]);
+  }, [
+    universitySlug,
+    careerSlug,
+    subjectSlug,
+    examId,
+    isResolutionComments,
+  ]);
 
+  // Refetch when examId or isResolutionComments changes
   useEffect(() => {
     fetchComments();
   }, [fetchComments]);
@@ -161,6 +215,16 @@ export function CommentSection({
       });
     };
     setComments((prevComments) => toggleFoldRecursive(prevComments));
+    // Update cache
+    if (isResolutionComments) {
+      resolutionCommentsCache.current = toggleFoldRecursive(
+        resolutionCommentsCache.current || []
+      );
+    } else {
+      examCommentsCache.current = toggleFoldRecursive(
+        examCommentsCache.current || []
+      );
+    }
   };
 
   const handleCommentAdded = (
@@ -202,6 +266,16 @@ export function CommentSection({
         });
       };
       setComments((prevComments) => addReplyRecursive(prevComments));
+      // Update cache
+      if (isResolutionComments) {
+        resolutionCommentsCache.current = addReplyRecursive(
+          resolutionCommentsCache.current || []
+        );
+      } else {
+        examCommentsCache.current = addReplyRecursive(
+          examCommentsCache.current || []
+        );
+      }
     } else {
       setComments((prevComments) =>
         [newCommentWithFoldState, ...prevComments].sort(
@@ -210,6 +284,26 @@ export function CommentSection({
             new Date(a.created_at).getTime(),
         ),
       );
+      // Update cache
+      if (isResolutionComments) {
+        resolutionCommentsCache.current = [
+          newCommentWithFoldState,
+          ...(resolutionCommentsCache.current || []),
+        ].sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() -
+            new Date(a.created_at).getTime(),
+        );
+      } else {
+        examCommentsCache.current = [
+          newCommentWithFoldState,
+          ...(examCommentsCache.current || []),
+        ].sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() -
+            new Date(a.created_at).getTime(),
+        );
+      }
     }
   };
 
@@ -225,10 +319,14 @@ export function CommentSection({
         setIsAddingComment(false);
         return;
       }
-      const endpoint = `${apiUrl}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exam/${examId}/comments`;
+      let endpoint = `${apiUrl}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exam/${examId}/comments`;
+      if (isResolutionComments) {
+        endpoint += "?resolution=true";
+      }
       try {
         const formData = new FormData();
         formData.append("content", newCommentContent);
+        formData.append("comment_type", isResolutionComments ? "resolution" : "exam");
         commentFiles.forEach((file) => {
           formData.append("attachments[]", file);
         });
@@ -281,7 +379,10 @@ export function CommentSection({
         toast.error("URL API no configurada.");
         return;
       }
-      const endpoint = `${apiUrl}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exam/${examId}/comment/${commentId}/vote`;
+      let endpoint = `${apiUrl}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exam/${examId}/comment/${commentId}/vote`;
+      if (isResolutionComments) {
+        endpoint += "?resolution=true";
+      }
       const payload = { vote_type: voteType };
       try {
         const response = await fetch(endpoint, {
@@ -341,6 +442,16 @@ export function CommentSection({
       });
     };
     setComments((prevComments) => updateRecursive(prevComments));
+    // Update cache
+    if (isResolutionComments) {
+      resolutionCommentsCache.current = updateRecursive(
+        resolutionCommentsCache.current || []
+      );
+    } else {
+      examCommentsCache.current = updateRecursive(
+        examCommentsCache.current || []
+      );
+    }
   };
 
   if (isLoading && comments.length === 0) {
@@ -376,7 +487,7 @@ export function CommentSection({
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <MessageSquareText className="h-5 w-5 text-primary" />
-              Deja un Comentario
+              {isResolutionComments ? "Comenta sobre la Resolución" : "Deja un Comentario"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -387,7 +498,11 @@ export function CommentSection({
                 selectedTab={commentTab}
                 onTabChange={setCommentTab}
                 minHeight={80}
-                placeholder="Escribe tu comentario aquí"
+                placeholder={
+                  isResolutionComments
+                    ? "Escribe tu comentario sobre la resolución aquí"
+                    : "Escribe tu comentario aquí"
+                }
               />
               <div {...getRootProps()} className="flex flex-col gap-2">
                 <input {...getInputProps()} />

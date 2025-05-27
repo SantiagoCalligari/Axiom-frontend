@@ -60,7 +60,6 @@ interface ExamDetail {
   created_at: string;
   file_path: string;
   ocr_text?: string | null;
-  // Si tienes resolución, puedes agregarla aquí:
   resolution_markdown?: string | null;
   resolution_download_url?: string | null;
 }
@@ -92,6 +91,9 @@ function getExamTypeLabel(type: string | null) {
   }
 }
 
+// --- Simple in-memory cache for resolution PDFs ---
+const resolutionPdfCache: Record<string, string> = {};
+
 export function ExamDetailClient({
   examData,
   subjectInfo,
@@ -107,6 +109,11 @@ export function ExamDetailClient({
     examData.ocr_text ? "ocr" : "pdf"
   );
 
+  // --- Resolution PDF state ---
+  const [resolutionPdfUrl, setResolutionPdfUrl] = useState<string | null>(null);
+  const [isLoadingResolution, setIsLoadingResolution] = useState(false);
+  const [resolutionError, setResolutionError] = useState<string | null>(null);
+
   useEffect(() => {
     setIsClient(true);
     const savedLayout = localStorage.getItem("examPageLayout") as LayoutStyle;
@@ -114,6 +121,42 @@ export function ExamDetailClient({
       setLayoutStyle(savedLayout);
     }
   }, []);
+
+  // --- Fetch resolution PDF when tab is selected ---
+  useEffect(() => {
+    if (tab === "resolution" && examData.is_resolved) {
+      const cacheKey = String(examData.id);
+      if (resolutionPdfCache[cacheKey]) {
+        setResolutionPdfUrl(resolutionPdfCache[cacheKey]);
+        setIsLoadingResolution(false);
+        setResolutionError(null);
+        return;
+      }
+      setIsLoadingResolution(true);
+      setResolutionError(null);
+
+      // Use baseUrl from env
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      const apiUrl = `${baseUrl}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exam/${examData.id}/resolution`;
+
+      fetch(apiUrl)
+        .then(async (res) => {
+          if (!res.ok) throw new Error("No se pudo obtener la resolución.");
+          const data = await res.json();
+          const url = data?.data?.download_url;
+          if (!url) throw new Error("No se encontró el PDF de resolución.");
+          resolutionPdfCache[cacheKey] = url;
+          setResolutionPdfUrl(url);
+        })
+        .catch((err) => {
+          setResolutionError(
+            err?.message || "Error al cargar la resolución."
+          );
+        })
+        .finally(() => setIsLoadingResolution(false));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, examData.id, examData.is_resolved, universitySlug, careerSlug, subjectSlug]);
 
   const handleLayoutStyleChange = (style: LayoutStyle) => {
     setLayoutStyle(style);
@@ -152,22 +195,12 @@ export function ExamDetailClient({
 
   // --- Descarga resolución (si existe) ---
   const handleDownloadResolution = () => {
-    if (!examData.resolution_markdown) return;
-    const blob = new Blob([examData.resolution_markdown], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${examData.title || "resolucion-examen"}.md`;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 100);
+    if (!resolutionPdfUrl) return;
+    window.open(resolutionPdfUrl, "_blank");
   };
 
   return (
-    <div className="container mx-auto max-w-7xl px-2 sm:px-4 py-4 sm:py-8">
+    <div className="container mx-auto max-w-7xl px-1 sm:px-2 py-4 sm:py-8">
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex-grow pr-0 sm:pr-4 min-w-0 w-full">
           <Breadcrumbs items={breadcrumbItems} />
@@ -374,26 +407,45 @@ export function ExamDetailClient({
               {/* --- RESOLUCIÓN TAB --- */}
               {tab === "resolution" && examData.is_resolved && (
                 <div>
-                  {examData.resolution_markdown ? (
+                  {isLoadingResolution ? (
+                    <div className="w-full h-[50vh] sm:h-[75vh] flex items-center justify-center border rounded-md bg-muted">
+                      <RotateCw className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : resolutionError ? (
+                    <p className="text-center text-destructive py-6 sm:py-10">
+                      {resolutionError}
+                    </p>
+                  ) : resolutionPdfUrl ? (
                     <>
-                      <div className="prose prose-sm dark:prose-invert max-w-none text-foreground whitespace-pre-wrap break-words border rounded-md p-4 bg-muted">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkMath]}
-                          rehypePlugins={[rehypeSanitize, rehypeKaTeX]}
-                        >
-                          {examData.resolution_markdown}
-                        </ReactMarkdown>
-                      </div>
-                      <div className="flex gap-2 mt-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleDownloadResolution}
-                        >
-                          <Download className="mr-2 h-4 w-4" />
-                          Descargar Resolución (.md)
-                        </Button>
-                      </div>
+                      <iframe
+                        key={resolutionPdfUrl}
+                        src={resolutionPdfUrl}
+                        className="w-full h-[50vh] sm:h-[75vh] border rounded-md"
+                        title={`Resolución de ${examData.title || "examen"}`}
+                      >
+                        <p className="p-4 text-center">
+                          Tu navegador no soporta la vista previa integrada de PDF.
+                          Puedes{" "}
+                          <a
+                            href={resolutionPdfUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-primary"
+                          >
+                            descargar el archivo aquí
+                          </a>{" "}
+                          para verlo.
+                        </p>
+                      </iframe>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3 sm:mt-4 w-full text-xs sm:text-sm"
+                        onClick={handleDownloadResolution}
+                      >
+                        <Download className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                        Descargar Resolución (PDF)
+                      </Button>
                     </>
                   ) : (
                     <p className="text-muted-foreground py-6 sm:py-10">
@@ -418,6 +470,7 @@ export function ExamDetailClient({
               careerSlug={careerSlug}
               subjectSlug={subjectSlug}
               examId={examData.id.toString()}
+              isResolutionComments={tab === "resolution"}
             />
           </Suspense>
         </div>

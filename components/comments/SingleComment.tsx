@@ -115,10 +115,13 @@ export const SingleComment: React.FC<SingleCommentProps> = ({
         setIsAddingReply(false);
         return;
       }
-      const endpoint = `${apiUrl}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exam/${examId}/comment/${comment.id}`;
+      // Always POST to the /comments endpoint (not /comment/:id)
+      const endpoint = `${apiUrl}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exam/${examId}/comments`;
       try {
         const formData = new FormData();
         formData.append("content", replyContent);
+        formData.append("parent_id", String(comment.id)); // <-- parent_id is required
+        formData.append("comment_type", comment.comment_type || "exam"); // <-- must match parent
         replyFiles.forEach((file) => {
           formData.append("attachments[]", file);
         });
