@@ -14,6 +14,7 @@ export interface Attachment {
 }
 
 export interface Comment {
+  comment_type: string;
   id: number;
   user_id: number;
   exam_id: number;
