@@ -1,5 +1,6 @@
 // FILE: app/context/AuthContext.tsx
 "use client";
+import { University, Career, Subject } from "../types";
 
 import React, {
   createContext,
@@ -55,6 +56,9 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  admin_universities?: University[];
+  admin_careers?: Career[];
+  admin_subjects?: Subject[];
   email_verified_at: string | null;
   created_at: string;
   updated_at: string;
