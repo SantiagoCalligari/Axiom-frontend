@@ -56,7 +56,7 @@ export function UniversityAdminActions({
       <EditUniversityModal
         open={showEditUniversity}
         onOpenChange={setShowEditUniversity}
-        universityId={universityId}
+        universitySlug={universitySlug}
         universityName={universityName}
         universityDescription={universityDescription}
         token={token}

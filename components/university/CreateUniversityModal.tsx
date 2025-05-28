@@ -33,7 +33,7 @@ export default function CreateUniversityModal({
     setLoading(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${apiUrl}/api/university`, {
+      const response = await fetch(`${apiUrl}/api/universities`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
