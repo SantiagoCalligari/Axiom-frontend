@@ -1,16 +1,7 @@
 // app/[universitySlug]/[careerSlug]/page.tsx
+
 import { notFound } from 'next/navigation';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { BackButton } from '@/components/ui/BackButton';
-import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
-import { SubjectList } from '@/components/lists/SubjectList';
-import CreateSubjectButton from './CreateSubjectButton';
+import ClientCareerPage from './ClientCareerPage';
 
 // --- Interfaces ---
 interface UniversityInfo { name: string; slug: string; }
@@ -18,6 +9,7 @@ interface Subject { id: number; name: string; slug: string; description: string 
 interface CareerDetail {
   id: number; university_id: number; name: string; slug: string;
   description: string | null; subjects: Subject[];
+  administrators: { id: number; name: string; email: string }[];
 }
 interface CareerApiResponse { data: CareerDetail; }
 interface UniversityApiResponseSimple { data: UniversityInfo; }
@@ -69,53 +61,23 @@ export default async function CareerPage({ params }: { params: Promise<{ univers
   ];
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-8">
-      {/* Encabezado */}
-      <div className="mb-6 flex items-start justify-between">
-        <div className='flex-grow pr-4'>
-          <Breadcrumbs items={breadcrumbItems} />
-          <h1 className="text-3xl md:text-4xl font-bold mt-1">{careerData.name}</h1>
-        </div>
-        <div className="flex-shrink-0">
-          <BackButton />
-        </div>
-      </div>
-
-      {/* Descripción */}
-      {careerData.description && (
-        <Card className="mb-8 bg-muted/30 border">
-          <CardHeader><CardTitle className="text-lg">Descripción</CardTitle></CardHeader>
-          <CardContent><p className="text-muted-foreground">{careerData.description}</p></CardContent>
-        </Card>
-      )}
-
-      {/* Sección de Materias con Búsqueda */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-semibold border-b pb-2">Materias</h2>
-          <CreateSubjectButton universitySlug={universitySlug} careerSlug={careerSlug} />
-        </div>
-        <SubjectList
-          subjects={careerData.subjects || []}
-          universitySlug={universitySlug}
-          careerSlug={careerSlug}
-        />
-      </section>
-    </div>
+    <ClientCareerPage
+      careerData={careerData}
+      universityInfo={universityInfo}
+      breadcrumbItems={breadcrumbItems}
+    />
   );
 }
 
 // --- Generar Metadata ---
 export async function generateMetadata({ params }: { params: Promise<{ universitySlug: string, careerSlug: string }> }) {
-  const { universitySlug, careerSlug } = await params; // Manteniendo tu forma
+  const { universitySlug, careerSlug } = await params;
   const careerData = await getCareerData(universitySlug, careerSlug);
-  // Podríamos obtener universityInfo aquí también para el título si quisiéramos
 
   if (!careerData) {
     return { title: 'Carrera no encontrada' };
   }
   return {
-    // title: `${careerData.name} - ${universityInfo?.name || ''} | Axiom`, // Ejemplo con nombre de Uni
     title: `${careerData.name} | Axiom`,
     description: careerData.description || `Materias de la carrera ${careerData.name}`,
   };
