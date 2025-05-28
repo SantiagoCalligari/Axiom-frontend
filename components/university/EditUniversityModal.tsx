@@ -46,7 +46,7 @@ export default function EditUniversityModal({
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       const response = await fetch(`${apiUrl}/api/university/${universitySlug}`, {
-        method: "PUT",
+        method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
