@@ -1,18 +1,17 @@
-// FILE: app/page.tsx
+// app/page.tsx
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Fleur_De_Leah } from "next/font/google";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-// LoginModal is now global, trigger via useAuth
-// import { LoginModal } from "@/components/auth/LoginModal";
 import { useAuth } from "@/app/context/AuthContext";
 import { toast } from "sonner";
 import { RegisterModal } from "@/components/auth/RegisterModal";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
-import CreateUniversityModal from "@/components/admin/CreateUniversityModal";
+import CreateUniversityModal from "@/components/university/CreateUniversityModal";
 
 interface University {
   id: number;
@@ -48,7 +47,7 @@ export default function Home() {
     logout,
     isLoading: isAuthLoading,
     openLoginModal,
-    isAuthenticated, // Use isAuthenticated for conditional rendering
+    isAuthenticated,
     user,
   } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
@@ -57,6 +56,10 @@ export default function Home() {
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Asumimos que el rol "admin" puede crear universidades
+  type UserRole = "admin" | "university_admin" | "career_admin";
+  const isAdmin = user?.roles?.includes("admin" as UserRole);
 
   const handleLogout = () => {
     logout();
@@ -111,7 +114,7 @@ export default function Home() {
 
     if (searchTerm.trim()) {
       setIsDropdownVisible(true);
-      setIsSearchLoading(true); // Ensure loading state is true before fetch
+      setIsSearchLoading(true);
       fetchUniversities(searchTerm, signal)
         .then((fetchedResults) => {
           if (!signal.aborted) setResults(fetchedResults);
@@ -123,7 +126,7 @@ export default function Home() {
     } else {
       setResults([]);
       setIsDropdownVisible(false);
-      setIsSearchLoading(false); // Ensure loading state is false if no search term
+      setIsSearchLoading(false);
     }
     return () => controller.abort();
   }, [searchTerm, fetchUniversities]);
@@ -142,7 +145,6 @@ export default function Home() {
   }, []);
 
   if (isAuthLoading && !token) {
-    // Show full page skeleton only on initial auth load and no token yet
     return (
       <div className="relative flex min-h-screen flex-col bg-gray-200">
         <div className="absolute top-4 right-4 flex h-10 items-center gap-x-3 p-4 sm:top-6 sm:right-6">
@@ -164,26 +166,22 @@ export default function Home() {
 
   return (
     <div className="relative flex min-h-screen flex-col bg-gray-200">
-      <div className="absolute top-4 right-4 flex items-center gap-x-3 p-4 sm:top-6 sm:right-6">
-        {isAuthenticated ? ( // Use isAuthenticated
-          <>
-            <Link href="/perfil" passHref>
-              <Button variant="outline">Perfil</Button>
-            </Link>
-            <Button variant="ghost" onClick={handleLogout}>
-              Salir
-            </Button>
-          </>
-        ) : (
-          <>
-            {/* Button to trigger global LoginModal */}
-            <Button variant="outline" onClick={openLoginModal}>
-              Entrar
-            </Button>
-            <RegisterModal /> {/* RegisterModal can keep its own trigger for now */}
-          </>
-        )}
-      </div>
+      {/* Botón solo para admin */}
+      {isAdmin && (
+        <div className="mb-4 flex justify-end mt-4">
+          <Button
+            className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition"
+            onClick={() => setShowCreateModal(true)}
+          >
+            Crear Universidad
+          </Button>
+        </div>
+      )}
+      <CreateUniversityModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        token={token}
+      />
 
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="flex w-full flex-col items-center text-center mb-8 sm:mb-20">
@@ -249,19 +247,6 @@ export default function Home() {
               </div>
             )}
           </div>
-          {user?.roles?.some((r) => r.name === "admin") && (
-            <Button className="mb-6" onClick={() => setShowCreateModal(true)}>
-              Crear Universidad
-            </Button>
-          )}
-          <CreateUniversityModal
-            open={showCreateModal}
-            onOpenChange={setShowCreateModal}
-            onCreated={() => {
-              setShowCreateModal(false);
-              // Podrías recargar la lista aquí si es necesario
-            }}
-          />
         </div>
       </div>
     </div>
