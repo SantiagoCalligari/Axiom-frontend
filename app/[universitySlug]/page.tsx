@@ -1,15 +1,7 @@
+// app/[universitySlug]/page.tsx
+
 import { notFound } from 'next/navigation';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { BackButton } from '@/components/ui/BackButton';
-import { CareerList } from '@/components/lists/CareerList';
-import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
-import { UniversityAdminActions } from '@/components/university/UniversityAdminActions';
-import { UniversityAdministrators } from '@/components/university/UniversityAdministrators';
+import ClientUniversityPage from './ClientUniversityPage';
 
 // --- Interfaces ---
 interface Career {
@@ -67,54 +59,12 @@ export default async function UniversityPage({ params }: { params: Promise<{ uni
     { label: universityData.name, href: `/${universitySlug}` },
   ];
 
+  // --- Estado para carreras (en el client) ---
+  // Usamos un Client Component wrapper para manejar el estado de carreras
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-8">
-      {/* Encabezado con Breadcrumbs y Botón Volver */}
-      <div className="mb-6 flex items-start justify-between">
-        <div className='flex-grow pr-4'>
-          <Breadcrumbs items={breadcrumbItems} />
-          <h1 className="text-3xl md:text-4xl font-bold mt-1">{universityData.name}</h1>
-        </div>
-        <div className="flex-shrink-0">
-          <BackButton />
-        </div>
-      </div>
-
-      {/* Acciones de administrador (agregar carrera, editar universidad) */}
-      <UniversityAdminActions
-        universityId={universityData.id}
-        universitySlug={universityData.slug}
-        universityName={universityData.name}
-        universityDescription={universityData.description}
-        administrators={universityData.administrators || []}
-      />
-
-      {/* Descripción */}
-      {universityData.description && (
-        <Card className="mb-8 bg-muted/30 border">
-          <CardHeader>
-            <CardTitle className="text-lg">Descripción</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">{universityData.description}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Sección de Carreras con Búsqueda */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-semibold border-b pb-2">Carreras Ofrecidas</h2>
-          {/* El botón de crear carrera ahora está en el modal de admin */}
-        </div>
-        <CareerList
-          careers={universityData.careers || []}
-          universitySlug={universityData.slug}
-        />
-      </section>
-
-      {/* Administradores al fondo, más pequeño y bonito */}
-      <UniversityAdministrators administrators={universityData.administrators || []} />
-    </div>
+    <ClientUniversityPage
+      universityData={universityData}
+      breadcrumbItems={breadcrumbItems}
+    />
   );
 }

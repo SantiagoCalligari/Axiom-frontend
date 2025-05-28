@@ -1,3 +1,5 @@
+// components/university/UniversityAdminActions.tsx
+
 "use client";
 
 import { useAuth } from "@/app/context/AuthContext";
@@ -12,6 +14,7 @@ interface UniversityAdminActionsProps {
   universityName: string;
   universityDescription: string | null;
   administrators: { id: number; name: string; email: string }[];
+  onCareerAdded: (career: { id: number; name: string; slug: string }) => void;
 }
 
 export function UniversityAdminActions({
@@ -19,7 +22,8 @@ export function UniversityAdminActions({
   universitySlug,
   universityName,
   universityDescription,
-  // administrators, // <-- remove from here
+  administrators,
+  onCareerAdded,
 }: UniversityAdminActionsProps) {
   const { user, token } = useAuth();
   const [showAddCareer, setShowAddCareer] = useState(false);
@@ -47,6 +51,7 @@ export function UniversityAdminActions({
         onOpenChange={setShowAddCareer}
         universitySlug={universitySlug}
         token={token}
+        onCareerAdded={onCareerAdded}
       />
       <EditUniversityModal
         open={showEditUniversity}

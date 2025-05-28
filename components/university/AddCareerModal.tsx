@@ -14,6 +14,7 @@ interface AddCareerModalProps {
   onOpenChange: (open: boolean) => void;
   universitySlug: string;
   token: string | null;
+  onCareerAdded?: (career: { id: number; name: string; slug: string }) => void;
 }
 
 export default function AddCareerModal({
@@ -21,6 +22,7 @@ export default function AddCareerModal({
   onOpenChange,
   universitySlug,
   token,
+  onCareerAdded,
 }: AddCareerModalProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -51,10 +53,14 @@ export default function AddCareerModal({
         const data = await response.json().catch(() => ({}));
         throw new Error(data.message || "Error al crear la carrera.");
       }
+      const data = await response.json();
       toast.success("Carrera creada correctamente.");
       onOpenChange(false);
       setName("");
       setDescription("");
+      if (onCareerAdded && data && data.data) {
+        onCareerAdded(data.data); // data.data debe ser la nueva carrera
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error desconocido.");
     } finally {
