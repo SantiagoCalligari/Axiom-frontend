@@ -10,7 +10,7 @@ import { toast } from "sonner";
 interface EditUniversityModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  universityId: number;
+  universitySlug: string;
   universityName: string;
   universityDescription: string | null;
   token: string | null;
@@ -19,7 +19,7 @@ interface EditUniversityModalProps {
 export default function EditUniversityModal({
   open,
   onOpenChange,
-  universityId,
+  universitySlug,
   universityName,
   universityDescription,
   token,
@@ -45,7 +45,7 @@ export default function EditUniversityModal({
     setLoading(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${apiUrl}/api/university/${universityId}`, {
+      const response = await fetch(`${apiUrl}/api/university/${universitySlug}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
