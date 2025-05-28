@@ -32,6 +32,7 @@ interface ExamDetail {
   uploader?: { name: string };
   created_at: string;
   file_path: string;
+  user_id: number;
 }
 
 interface PageParams {

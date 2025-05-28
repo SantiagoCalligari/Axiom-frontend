@@ -56,7 +56,7 @@ export default function ClientCareerPage({
   const router = useRouter();
 
   // Permisos
-  const isAdmin = user?.roles?.includes("admin");
+  const isAdmin = user?.roles?.includes("admin" as any);
   const isUniversityAdmin = user?.admin_universities?.some(u => u.id === careerData.university_id);
   const isCareerAdmin = user?.admin_careers?.some(c => c.id === careerData.id);
   const canEdit = isAdmin || isUniversityAdmin || isCareerAdmin;

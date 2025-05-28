@@ -1,4 +1,4 @@
-// components/comments/ShadcnMDE.tsx
+/// components/comments/ShadcnMDE.tsx
 
 import React from "react";
 import ReactMde from "react-mde";
@@ -84,13 +84,9 @@ export function ShadcnMDE({
               "bg-background border rounded-md border-input focus:outline-none focus:ring-2 focus:ring-primary/30 px-3 py-2 min-h-[80px] text-sm font-mono",
             toolbar:
               "flex gap-1 bg-muted border-b rounded-t-md px-2 py-1",
-            toolbarButton:
-              "rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground focus:ring-2 focus:ring-primary/30 focus:outline-none transition",
-            toolbarButtonSelected: "bg-accent text-foreground",
             preview:
               "bg-muted border rounded-md p-3 min-h-[80px] prose prose-sm dark:prose-invert text-foreground",
           }}
-          placeholder={placeholder}
         />
       </div>
       <div className="text-xs text-muted-foreground mt-1">
