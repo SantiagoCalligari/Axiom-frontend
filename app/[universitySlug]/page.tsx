@@ -1,4 +1,3 @@
-// app/[universitySlug]/page.tsx
 import { notFound } from 'next/navigation';
 import {
   Card,
@@ -9,13 +8,15 @@ import {
 import { BackButton } from '@/components/ui/BackButton';
 import { CareerList } from '@/components/lists/CareerList';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
-import CreateCareerButton from './CreateCareerButton';
+import { UniversityAdminActions } from '@/components/university/UniversityAdminActions';
+import { UniversityAdministrators } from '@/components/university/UniversityAdministrators';
 
 // --- Interfaces ---
 interface Career {
   id: number;
   name: string;
   slug: string;
+  description?: string | null;
 }
 interface UniversityDetail {
   id: number;
@@ -23,6 +24,7 @@ interface UniversityDetail {
   slug: string;
   description: string | null;
   careers: Career[];
+  administrators: { id: number; name: string; email: string }[];
 }
 interface ApiResponse { data: UniversityDetail; }
 
@@ -78,11 +80,24 @@ export default async function UniversityPage({ params }: { params: Promise<{ uni
         </div>
       </div>
 
+      {/* Acciones de administrador (agregar carrera, editar universidad) */}
+      <UniversityAdminActions
+        universityId={universityData.id}
+        universitySlug={universityData.slug}
+        universityName={universityData.name}
+        universityDescription={universityData.description}
+        administrators={universityData.administrators || []}
+      />
+
       {/* Descripción */}
       {universityData.description && (
         <Card className="mb-8 bg-muted/30 border">
-          <CardHeader><CardTitle className="text-lg">Descripción</CardTitle></CardHeader>
-          <CardContent><p className="text-muted-foreground">{universityData.description}</p></CardContent>
+          <CardHeader>
+            <CardTitle className="text-lg">Descripción</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">{universityData.description}</p>
+          </CardContent>
         </Card>
       )}
 
@@ -90,13 +105,16 @@ export default async function UniversityPage({ params }: { params: Promise<{ uni
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-semibold border-b pb-2">Carreras Ofrecidas</h2>
-          <CreateCareerButton universitySlug={universityData.slug} />
+          {/* El botón de crear carrera ahora está en el modal de admin */}
         </div>
         <CareerList
           careers={universityData.careers || []}
           universitySlug={universityData.slug}
         />
       </section>
+
+      {/* Administradores al fondo, más pequeño y bonito */}
+      <UniversityAdministrators administrators={universityData.administrators || []} />
     </div>
   );
 }
