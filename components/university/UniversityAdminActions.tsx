@@ -22,26 +22,32 @@ export function UniversityAdminActions({
   universitySlug,
   universityName,
   universityDescription,
-  administrators,
   onCareerAdded,
 }: UniversityAdminActionsProps) {
   const { user, token } = useAuth();
+  const isAdmin = user?.roles?.includes("admin" as any);
+  const isUniversityAdmin = user?.admin_universities?.some(
+    (u: { id: number }) => u.id === universityId
+  );
+  const canCreateOrEdit = isAdmin || isUniversityAdmin;
+
   const [showAddCareer, setShowAddCareer] = useState(false);
   const [showEditUniversity, setShowEditUniversity] = useState(false);
 
-  // Check if the current user is an admin of this university
-  const isAdmin = !!user?.admin_universities?.some(
-    (u) => u.id === universityId
-  );
-
   return (
     <>
-      {isAdmin && (
-        <div className="flex gap-2 mb-8">
-          <Button variant="default" onClick={() => setShowAddCareer(true)}>
+      {canCreateOrEdit && (
+        <div className="mb-4 flex gap-2 justify-end">
+          <Button
+            variant="default"
+            onClick={() => setShowAddCareer(true)}
+          >
             Agregar Carrera
           </Button>
-          <Button variant="outline" onClick={() => setShowEditUniversity(true)}>
+          <Button
+            variant="outline"
+            onClick={() => setShowEditUniversity(true)}
+          >
             Editar Universidad
           </Button>
         </div>

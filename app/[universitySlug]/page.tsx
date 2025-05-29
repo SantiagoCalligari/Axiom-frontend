@@ -59,8 +59,6 @@ export default async function UniversityPage({ params }: { params: Promise<{ uni
     { label: universityData.name, href: `/${universitySlug}` },
   ];
 
-  // --- Estado para carreras (en el client) ---
-  // Usamos un Client Component wrapper para manejar el estado de carreras
   return (
     <ClientUniversityPage
       universityData={universityData}
