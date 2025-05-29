@@ -26,6 +26,7 @@ interface UniversityDetail {
   name: string;
   slug: string;
   description: string | null;
+  aliases: string[]
   careers: Career[];
   administrators: { id: number; name: string; email: string }[];
 }
@@ -129,6 +130,7 @@ export default function ClientUniversityPage({
         universitySlug={universityData.slug}
         universityName={universityData.name}
         universityDescription={universityData.description}
+        universityAliases={universityData.aliases}
         token={token}
       />
 

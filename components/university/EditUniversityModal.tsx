@@ -1,10 +1,12 @@
+// components/university/EditUniversityModal.tsx
+
 "use client";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 interface EditUniversityModalProps {
@@ -13,6 +15,7 @@ interface EditUniversityModalProps {
   universitySlug: string;
   universityName: string;
   universityDescription: string | null;
+  universityAliases?: string[];
   token: string | null;
 }
 
@@ -22,19 +25,49 @@ export default function EditUniversityModal({
   universitySlug,
   universityName,
   universityDescription,
+  universityAliases = [],
   token,
 }: EditUniversityModalProps) {
   const [name, setName] = useState(universityName);
   const [description, setDescription] = useState(universityDescription || "");
+  const [aliases, setAliases] = useState<string[]>(universityAliases);
+  const [aliasInput, setAliasInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const aliasInputRef = useRef<HTMLInputElement>(null);
 
   // Sync state with props when modal opens
   useEffect(() => {
     if (open) {
       setName(universityName);
       setDescription(universityDescription || "");
+      setAliases(universityAliases || []);
+      setAliasInput("");
     }
-  }, [open, universityName, universityDescription]);
+  }, [open]);
+
+  const handleAddAlias = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const trimmed = aliasInput.trim();
+    if (trimmed && !aliases.includes(trimmed)) {
+      setAliases((prev) => [...prev, trimmed]);
+      setAliasInput("");
+      setTimeout(() => aliasInputRef.current?.focus(), 0);
+    }
+  };
+
+  const handleRemoveAlias = (alias: string) => {
+    setAliases((prev) => prev.filter((a) => a !== alias));
+    setTimeout(() => aliasInputRef.current?.focus(), 0);
+  };
+
+  const handleAliasInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if ((e.key === "Enter" || e.key === ",") && aliasInput.trim()) {
+      e.preventDefault();
+      handleAddAlias();
+    } else if (e.key === "Backspace" && !aliasInput && aliases.length > 0) {
+      setAliases((prev) => prev.slice(0, -1));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +79,7 @@ export default function EditUniversityModal({
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       const response = await fetch(`${apiUrl}/api/university/${universitySlug}`, {
-        method: "POST",
+        method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -55,6 +88,7 @@ export default function EditUniversityModal({
         body: JSON.stringify({
           name,
           description,
+          aliases,
         }),
       });
       if (!response.ok) {
@@ -83,6 +117,48 @@ export default function EditUniversityModal({
             onChange={(e) => setName(e.target.value)}
             required
           />
+
+          {/* Aliases input visual */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Aliases</label>
+            <div
+              className="flex flex-wrap items-center gap-1 px-3 py-2 border rounded-md bg-background focus-within:ring-2 focus-within:ring-primary/30"
+              style={{ minHeight: 40 }}
+              onClick={() => aliasInputRef.current?.focus()}
+            >
+              {aliases.map((alias) => (
+                <span
+                  key={alias}
+                  className="inline-flex items-center bg-primary/10 text-primary px-2 py-1 rounded-full text-xs font-medium"
+                >
+                  {alias}
+                  <button
+                    type="button"
+                    className="ml-1 text-xs text-red-500 hover:text-red-700"
+                    onClick={() => handleRemoveAlias(alias)}
+                    tabIndex={-1}
+                    aria-label={`Eliminar alias ${alias}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              <input
+                ref={aliasInputRef}
+                type="text"
+                className="flex-1 min-w-[80px] border-none outline-none bg-transparent text-sm py-1"
+                placeholder={aliases.length === 0 ? "Agregar alias y presioná Enter o , ..." : ""}
+                value={aliasInput}
+                onChange={(e) => setAliasInput(e.target.value)}
+                onKeyDown={handleAliasInputKeyDown}
+                disabled={loading}
+              />
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              Presioná <b>Enter</b> o <b>,</b> para agregar un alias. Backspace para borrar el último.
+            </div>
+          </div>
+
           <Textarea
             placeholder="Descripción de la universidad"
             value={description}
