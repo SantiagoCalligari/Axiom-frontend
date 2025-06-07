@@ -80,7 +80,7 @@ export default function ExamReviewClient({ examId }: { examId: string }) {
   const [error, setError] = useState<string | null>(null);
 
   // Solo admins pueden entrar
-  const isAdmin = isAnyAdmin(user?.roles);
+  const isAdmin = isAnyAdmin(user?.roles as any);
 
   useEffect(() => {
     if (!token || !isAdmin) return;
