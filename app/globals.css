@@ -6,6 +6,40 @@
   display: none !important;
 }
 
+.bg-desktop-fondo {
+  position: relative;
+  z-index: 0;
+  background: none !important;
+}
+
+@media (min-width: 1024px) {
+  .bg-desktop-fondo::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: url("/Hojas-1.png");
+    background-size: 30%; /* Cambia el porcentaje para escalar */
+    background-repeat: no-repeat;
+    background-position: top right;
+    opacity: 1; /* Cambia el valor para más o menos transparencia */
+  }
+ .bg-desktop-fondo::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image: url("/Hojas-1.png");
+    background-size: 35%; /* Cambia el porcentaje para escalar */
+    background-repeat: no-repeat;
+    background-position: right top;
+    transform: scale(-1,-1);
+    opacity: 1; /* Cambia el valor para más o menos transparencia */
+  }
+
+}
+
 
 @custom-variant dark (&:is(.dark *));
 

@@ -1,5 +1,3 @@
-// app/page.tsx
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
@@ -147,7 +145,7 @@ export default function Home() {
 
   if (isAuthLoading && !token) {
     return (
-      <div className="relative flex min-h-screen flex-col bg-gray-200">
+      <div className="relative flex min-h-screen flex-col bg-gray-200 bg-desktop-fondo">
         <div className="absolute top-4 right-4 flex h-10 items-center gap-x-3 p-4 sm:top-6 sm:right-6">
           <Skeleton className="h-10 w-20 rounded-md" />
           <Skeleton className="h-10 w-24 rounded-md" />
@@ -166,7 +164,7 @@ export default function Home() {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-gray-200">
+    <div className="relative flex min-h-screen flex-col bg-gray-200 bg-desktop-fondo">
       {/* Botón solo para admin */}
       {isAdmin && (
         <div className="mb-4 flex justify-end mt-4">
@@ -183,7 +181,7 @@ export default function Home() {
         onOpenChange={setShowCreateModal}
         token={token}
       />
-      <PendingExamsWidget></PendingExamsWidget>
+      <PendingExamsWidget />
 
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="flex w-full flex-col items-center text-center mb-8 sm:mb-20">
