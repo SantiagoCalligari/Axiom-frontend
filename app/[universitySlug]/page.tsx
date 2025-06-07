@@ -16,6 +16,7 @@ interface UniversityDetail {
   slug: string;
   description: string | null;
   careers: Career[];
+  aliases: string[];
   administrators: { id: number; name: string; email: string }[];
 }
 interface ApiResponse { data: UniversityDetail; }
