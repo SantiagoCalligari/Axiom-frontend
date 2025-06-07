@@ -12,6 +12,7 @@ import { RegisterModal } from "@/components/auth/RegisterModal";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import CreateUniversityModal from "@/components/university/CreateUniversityModal";
+import { PendingExamsWidget } from "@/components/exam/PendingExamsWidget";
 
 interface University {
   id: number;
@@ -59,7 +60,7 @@ export default function Home() {
 
   // Asumimos que el rol "admin" puede crear universidades
   type UserRole = "admin" | "university_admin" | "career_admin";
-  const isAdmin = user?.roles?.includes("admin" as UserRole);
+  const isAdmin = user?.roles?.includes("admin" as any);
 
   const handleLogout = () => {
     logout();
@@ -182,6 +183,7 @@ export default function Home() {
         onOpenChange={setShowCreateModal}
         token={token}
       />
+      <PendingExamsWidget></PendingExamsWidget>
 
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="flex w-full flex-col items-center text-center mb-8 sm:mb-20">
