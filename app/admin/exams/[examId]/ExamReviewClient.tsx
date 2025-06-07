@@ -79,8 +79,22 @@ export default function ExamReviewClient({ examId }: { examId: string }) {
   const [rejectionReason, setRejectionReason] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  // Redirigir si no está autenticado
+  useEffect(() => {
+    if (user === null || user === undefined) {
+      router.replace("/");
+    }
+  }, [user, router]);
+
   // Solo admins pueden entrar
   const isAdmin = isAnyAdmin(user?.roles as any);
+
+  // Redirigir si no es admin
+  useEffect(() => {
+    if (user && !isAdmin) {
+      router.replace("/");
+    }
+  }, [user, isAdmin, router]);
 
   useEffect(() => {
     if (!token || !isAdmin) return;
@@ -109,19 +123,8 @@ export default function ExamReviewClient({ examId }: { examId: string }) {
     fetchExam();
   }, [token, isAdmin, examId]);
 
-  // Redirigir si no es admin
-  useEffect(() => {
-    if (user && !isAdmin) {
-      router.replace("/");
-    }
-  }, [user, isAdmin, router]);
-
-  if (!user || !isAdmin) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">
-        Solo administradores pueden acceder a esta página.
-      </div>
-    );
+  if (!user) {
+    return null; // O un loader si querés
   }
 
   if (loading) {

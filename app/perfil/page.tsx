@@ -4,7 +4,7 @@ import { ProfileDisplay } from "@/components/profile/ProfileDisplay";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, UserCog, Loader2, X, Check, Search, School, BookOpen, GraduationCap, Plus } from "lucide-react";
+import { ArrowLeft, UserCog, Loader2, X, Check, Search, Plus } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +34,13 @@ const ROLE_LABELS: Record<string, string> = {
 export default function ProfilePage() {
   const router = useRouter();
   const { user, token } = useAuth();
+
+  // Redirigir si no está autenticado
+  useEffect(() => {
+    if (user === null || user === undefined) {
+      router.replace("/");
+    }
+  }, [user, router]);
 
   // --- Subscriptions ---
   const [subscriptions, setSubscriptions] = useState<{
@@ -321,6 +328,10 @@ export default function ProfilePage() {
     setSelectedSubject(null);
     setSubjectOptions([]);
   }, [selectedCareer]);
+
+  if (!user) {
+    return null; // O un loader si querés
+  }
 
   return (
     <div className="container mx-auto max-w-6xl px-2 sm:px-4 py-4 sm:py-8">
