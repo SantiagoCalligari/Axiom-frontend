@@ -186,7 +186,7 @@ export default function Home() {
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="flex w-full flex-col items-center text-center mb-8 sm:mb-20">
           <h1
-            className={`mb-1 text-6xl font-medium text-blue-700 sm:text-9xl ${fleur.className}`}
+            className={`mb-1 text-6xl font-medium text-[#2b4f99] sm:text-9xl ${fleur.className}`}
           >
             Axiom
           </h1>
