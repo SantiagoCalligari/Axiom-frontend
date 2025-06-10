@@ -152,7 +152,7 @@ export function ExamCreateModal({
 
         try {
           const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-          const url = `${apiUrl}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exams`;
+          const url = `${apiUrl?.replace('https', 'http')}/api/university/${universitySlug}/career/${careerSlug}/subject/${subjectSlug}/exams`;
           const res = await fetch(url, {
             method: "POST",
             body: formData,
