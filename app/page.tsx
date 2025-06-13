@@ -11,6 +11,7 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import CreateUniversityModal from "@/components/university/CreateUniversityModal";
 import { PendingExamsWidget } from "@/components/exam/PendingExamsWidget";
+import Image from "next/image";
 
 interface University {
   id: number;
@@ -185,11 +186,17 @@ export default function Home() {
 
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="flex w-full flex-col items-center text-center mb-8 sm:mb-20">
-          <h1
-            className={`mb-1 text-6xl font-medium text-[#2b4f99] sm:text-9xl ${fleur.className}`}
-          >
-            Axiom
-          </h1>
+          <div className="w-4/5 max-w-xs sm:max-w-sm">
+            <Image
+              src="/axiom-logo.png"
+              width={1920}
+              height={1080}
+              alt="Axiom Logo"
+              className="h-auto w-full"
+              priority
+            />
+          </div>
+
           <p
             className={`mb-4 text-base text-gray-600 sm:text-xl ${fleur.className}`}
           >
