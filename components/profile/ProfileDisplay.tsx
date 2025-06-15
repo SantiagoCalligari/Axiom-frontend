@@ -32,6 +32,7 @@ interface Subject {
 interface UserData {
   id: number;
   name: string;
+  display_name: string;
   email: string;
   email_verified_at: string | null;
   created_at: string;
@@ -198,7 +199,7 @@ export function ProfileDisplay() {
               </AvatarFallback>
             </Avatar>
           </div>
-          <h1 className="text-2xl font-semibold">{user.name}</h1>
+          <h1 className="text-2xl font-semibold">{user.display_name}</h1>
           <p className="text-muted-foreground">{user.email}</p>
           <p className="text-sm text-muted-foreground mt-3">
             Miembro desde:{" "}

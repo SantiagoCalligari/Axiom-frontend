@@ -297,7 +297,7 @@ export const SingleComment: React.FC<SingleCommentProps> = ({
                 <ChevronDown className="h-4 w-4" />
               )}
             </button>
-            <p className="font-medium">{comment.user.name}</p>
+            <p className="font-medium">{comment.user.display_name}</p>
             <span className="text-muted-foreground text-xs">
               ·{" "}
               {formatDistanceToNow(new Date(comment.created_at), {
@@ -453,7 +453,7 @@ export const SingleComment: React.FC<SingleCommentProps> = ({
                         selectedTab={replyTab}
                         onTabChange={setReplyTab}
                         minHeight={60}
-                        placeholder={`Responder a ${comment.user.name}...`}
+                        placeholder={`Responder a ${comment.user.display_name}...`}
                       />
                       <div {...getRootProps()} className="flex flex-col gap-2">
                         <input {...getInputProps()} />

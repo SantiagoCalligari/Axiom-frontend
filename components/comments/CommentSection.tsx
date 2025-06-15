@@ -17,6 +17,7 @@ import { Comment, PaginatedCommentsResponse } from "./types";
 interface CommentUser {
   id: number;
   name: string;
+  display_name: string;
 }
 
 interface Attachment {
