@@ -14,18 +14,18 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-// No necesitamos useAuth aquí porque no estamos logueando al usuario
 import { toast } from "sonner";
+import { Mail, Lock, User, Loader2, Smile } from "lucide-react";
 
-// Interfaz para errores de validación de Laravel (común)
 interface ValidationErrorResponse {
   message: string;
-  errors: Record<string, string[]>; // { email: ["El email ya existe."], ... }
+  errors: Record<string, string[]>;
 }
 
 export function RegisterModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
@@ -36,13 +36,11 @@ export function RegisterModal() {
   ) => {
     event.preventDefault();
 
-    // Validación simple del lado del cliente
     if (password !== passwordConfirmation) {
       toast.error("Las contraseñas no coinciden.");
       return;
     }
     if (password.length < 8) {
-      // Asumiendo un mínimo de 8 caracteres (ajusta según tus reglas de Laravel)
       toast.error("La contraseña debe tener al menos 8 caracteres.");
       return;
     }
@@ -56,8 +54,7 @@ export function RegisterModal() {
       return;
     }
 
-    // Endpoint común para registro en Laravel API
-    const registerEndpoint = `${apiUrl}/api/auth/register`; // Ajusta si es diferente
+    const registerEndpoint = `${apiUrl}/api/auth/register`;
 
     try {
       const response = await fetch(registerEndpoint, {
@@ -68,32 +65,28 @@ export function RegisterModal() {
         },
         body: JSON.stringify({
           name: name,
+          display_name: displayName,
           email: email,
           password: password,
           password_confirmation: passwordConfirmation,
         }),
       });
 
-      // Éxito (usualmente 201 Created)
       if (response.ok) {
-        // const newUser = await response.json(); // Podrías obtener datos del nuevo usuario si la API los devuelve
         toast.success(
           "¡Registro exitoso! Revisa tu correo para verificar tu cuenta.",
         );
-        setIsOpen(false); // Cerrar modal
-        // Limpiar campos
+        setIsOpen(false);
         setName("");
+        setDisplayName("");
         setEmail("");
         setPassword("");
         setPasswordConfirmation("");
-        // NO loguear al usuario aquí, necesita verificar email
       } else {
-        // Manejar errores (ej: 422 Validación)
         const errorData: ValidationErrorResponse | any = await response.json();
         let errorMessage = "Error en el registro. Intenta de nuevo.";
 
         if (response.status === 422 && errorData.errors) {
-          // Extraer el primer error de validación para mostrar
           const firstErrorKey = Object.keys(errorData.errors)[0];
           errorMessage = errorData.errors[firstErrorKey][0];
         } else if (errorData.message) {
@@ -111,10 +104,10 @@ export function RegisterModal() {
     }
   };
 
-  // Limpiar campos al cerrar
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       setName("");
+      setDisplayName("");
       setEmail("");
       setPassword("");
       setPasswordConfirmation("");
@@ -125,68 +118,115 @@ export function RegisterModal() {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        {/* El botón que abre este modal estará en page.tsx */}
         <Button>Registrate</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[380px] rounded-xl shadow-lg p-0">
         <DialogHeader>
-          <DialogTitle>Crear Cuenta</DialogTitle>
-          <DialogDescription>
-            Completa los datos para unirte a Axiom.
+          <DialogTitle className="text-xl font-bold text-center mb-0">
+            Crear Cuenta
+          </DialogTitle>
+          <DialogDescription className="text-center text-sm text-muted-foreground mb-1">
+            Unite a <span className="font-semibold text-primary">Axiom</span>
           </DialogDescription>
         </DialogHeader>
-
-        <form onSubmit={handleRegisterSubmit} className="space-y-4 py-4">
-          <div className="space-y-1">
-            <Label htmlFor="name">Nombre</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Tu nombre completo"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              disabled={isLoading}
-            />
+        <form onSubmit={handleRegisterSubmit} className="space-y-3 py-1">
+          <div className="grid gap-2">
+            <Label htmlFor="name" className="text-xs text-muted-foreground">
+              Nombre completo
+            </Label>
+            <div className="relative">
+              <Input
+                id="name"
+                type="text"
+                placeholder="Tu nombre"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                disabled={isLoading}
+                className="pl-9 py-2"
+              />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            </div>
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="register-email">Email</Label> {/* ID único */}
-            <Input
-              id="register-email"
-              type="email"
-              placeholder="tu@ejemplo.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={isLoading}
-            />
+          <div className="grid gap-2">
+            <Label htmlFor="display-name" className="text-xs text-muted-foreground">
+              ¿Cómo querés que nos refiramos a vos?
+            </Label>
+            <div className="relative">
+              <Input
+                id="display-name"
+                type="text"
+                placeholder="Ej: Nico, Flor, Profe, etc."
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                required
+                disabled={isLoading}
+                className="pl-9 py-2"
+              />
+              <Smile className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            </div>
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="register-password">Contraseña</Label> {/* ID único */}
-            <Input
-              id="register-password"
-              type="password"
-              placeholder="Mínimo 8 caracteres"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={isLoading}
-            />
+          <div className="grid gap-2">
+            <Label htmlFor="register-email" className="text-xs text-muted-foreground">
+              Email
+            </Label>
+            <div className="relative">
+              <Input
+                id="register-email"
+                type="email"
+                placeholder="tu@ejemplo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+                className="pl-9 py-2"
+              />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            </div>
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="password-confirmation">Confirmar Contraseña</Label>
-            <Input
-              id="password-confirmation"
-              type="password"
-              placeholder="Repite tu contraseña"
-              value={passwordConfirmation}
-              onChange={(e) => setPasswordConfirmation(e.target.value)}
-              required
-              disabled={isLoading}
-            />
+          <div className="grid gap-2">
+            <Label htmlFor="register-password" className="text-xs text-muted-foreground">
+              Contraseña
+            </Label>
+            <div className="relative">
+              <Input
+                id="register-password"
+                type="password"
+                placeholder="Mínimo 8 caracteres"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+                className="pl-9 py-2"
+              />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            </div>
           </div>
-          <DialogFooter>
-            <Button type="submit" disabled={isLoading} className="w-full">
+          <div className="grid gap-2">
+            <Label htmlFor="password-confirmation" className="text-xs text-muted-foreground">
+              Confirmar Contraseña
+            </Label>
+            <div className="relative">
+              <Input
+                id="password-confirmation"
+                type="password"
+                placeholder="Repite tu contraseña"
+                value={passwordConfirmation}
+                onChange={(e) => setPasswordConfirmation(e.target.value)}
+                required
+                disabled={isLoading}
+                className="pl-9 py-2"
+              />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            </div>
+          </div>
+          <DialogFooter className="pt-2">
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-2 text-base font-semibold flex items-center justify-center gap-2"
+            >
+              {isLoading && <Loader2 className="animate-spin h-4 w-4" />}
               {isLoading ? "Registrando..." : "Crear Cuenta"}
             </Button>
           </DialogFooter>
@@ -195,4 +235,3 @@ export function RegisterModal() {
     </Dialog>
   );
 }
-

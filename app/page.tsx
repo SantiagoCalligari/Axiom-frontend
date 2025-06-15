@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/app/context/AuthContext";
 import { toast } from "sonner";
-import { RegisterModal } from "@/components/auth/RegisterModal";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import CreateUniversityModal from "@/components/university/CreateUniversityModal";

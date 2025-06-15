@@ -21,13 +21,6 @@ export const metadata: Metadata = {
   description: "Una pagina para estudiantes",
 };
 
-const componentStyle = {
-  backgroundImage: "url('/background.svg')",
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  backgroundRepeat: "no-repeat",
-  minHeight: "100vh",
-};
 
 export default function RootLayout({
   children,
@@ -38,7 +31,6 @@ export default function RootLayout({
     <html lang="es">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={componentStyle}
       >
         <AuthProvider>
           <Header />

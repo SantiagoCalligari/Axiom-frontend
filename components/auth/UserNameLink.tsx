@@ -20,7 +20,7 @@ export function UserNameLink() {
         className="font-semibold text-base px-4 py-2 rounded hover:bg-primary/10 transition"
         style={{ background: "rgba(255,255,255,0.7)" }}
       >
-        {user.name}
+        {user.display_name}
       </Link>
     </div>
   );

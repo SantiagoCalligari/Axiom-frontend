@@ -101,16 +101,6 @@ export function LoginModal() {
     }
   };
 
-  const handleGoogleLoginClick = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (apiUrl) {
-      window.location.href = `${apiUrl}/login/google/redirect`;
-    } else {
-      toast.error("URL de la API no configurada para el inicio con Google.");
-    }
-  };
-
-  // SIEMPRE renderiza el modal, solo controlá su visibilidad con open
   return (
     <Dialog open={isLoginModalOpen} onOpenChange={closeLoginModal}>
       <DialogContent className="sm:max-w-[425px]">
@@ -157,26 +147,6 @@ export function LoginModal() {
             </Button>
           </DialogFooter>
         </form>
-
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              O continuar con
-            </span>
-          </div>
-        </div>
-
-        <Button
-          variant="outline"
-          className="w-full flex items-center justify-center gap-x-2"
-          onClick={handleGoogleLoginClick}
-          disabled={isSubmitting || isAuthLoading}
-        >
-          Ingresar con Google
-        </Button>
       </DialogContent>
     </Dialog>
   );

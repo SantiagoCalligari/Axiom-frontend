@@ -55,6 +55,7 @@ interface SubjectForUserContext {
 export interface User {
   id: number;
   name: string;
+  display_name: string;
   email: string;
   admin_universities?: University[];
   admin_careers?: Career[];

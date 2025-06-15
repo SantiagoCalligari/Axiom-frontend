@@ -31,10 +31,10 @@ export function Header() {
               <Button
                 variant="outline"
                 className="max-w-[10rem] w-full overflow-hidden text-ellipsis whitespace-nowrap"
-                title={user?.name || "Perfil"}
+                title={user?.display_name || "Perfil"}
               >
                 <span className="block overflow-hidden text-ellipsis whitespace-nowrap">
-                  {user?.name || "Perfil"}
+                  {user?.display_name || "Perfil"}
                 </span>
               </Button>
             </Link>
