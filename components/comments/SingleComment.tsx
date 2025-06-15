@@ -14,7 +14,6 @@ import {
   Paperclip,
   ChevronDown,
   ChevronRight,
-  X,
   Edit,
   Trash2,
   Save,
@@ -275,7 +274,6 @@ export const SingleComment: React.FC<SingleCommentProps> = ({
 
   // ¿Es el dueño?
   const isOwner = user && user.id === comment.user_id;
-
   return (
     <div className="space-y-1 border-l-2 pl-3 py-2 hover:bg-muted/20 rounded-r-md group">
       <div className="flex items-start space-x-2.5">
